@@ -4,7 +4,7 @@ import type { Analysis, Source } from './types.js';
  * STUB. Turns sources into sentiment / confidence / risk / key points.
  * Later: call the LLM with the sources and a structured-output schema.
  */
-export async function analyze(question: string, sources: Source[]): Promise<Analysis> {
+export async function analyze(_question: string, sources: Source[]): Promise<Analysis> {
   return {
     sentiment: 'neutral',
     confidence: 0.5,
