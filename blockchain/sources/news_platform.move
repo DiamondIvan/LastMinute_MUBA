@@ -9,6 +9,11 @@
 ///
 /// Kept OFF-CHAIN: the report text itself (stored on Walrus). Only its hash is
 /// anchored here.
+///
+/// `self_transfer` lint is allowed on purpose: `subscribe` and `purchase_report`
+/// hand the new object straight to the buyer, which is the intended UX (one
+/// wallet approval -> user owns the object).
+#[allow(lint(self_transfer))]
 module blockchain::news_platform {
     use sui::coin::{Self, Coin};
     use sui::event;
@@ -127,7 +132,7 @@ module blockchain::news_platform {
     // ---- subscription -----------------------------------------------------------
 
     /// Buy a fresh `PremiumPass`. `payment` must equal the subscription price exactly.
-    public entry fun subscribe(
+    public fun subscribe(
         config: &PlatformConfig,
         payment: Coin<SUI>,
         clock: &Clock,
@@ -149,7 +154,7 @@ module blockchain::news_platform {
     }
 
     /// Extend an existing pass. Only the pass owner may call this.
-    public entry fun renew(
+    public fun renew(
         config: &PlatformConfig,
         pass: &mut PremiumPass,
         payment: Coin<SUI>,
@@ -172,7 +177,7 @@ module blockchain::news_platform {
     // ---- reports --------------------------------------------------------------
 
     /// Admin-only: anchor a new report's provenance on-chain. Rejects duplicate hashes.
-    public entry fun register_report(
+    public fun register_report(
         _: &AdminCap,
         config: &mut PlatformConfig,
         title: vector<u8>,
@@ -205,7 +210,7 @@ module blockchain::news_platform {
 
     /// Buy time-boxed access to a single report. `payment` must equal the report
     /// price exactly.
-    public entry fun purchase_report(
+    public fun purchase_report(
         config: &PlatformConfig,
         report: &ResearchReport,
         payment: Coin<SUI>,
@@ -238,7 +243,7 @@ module blockchain::news_platform {
     // ---- admin --------------------------------------------------------------
 
     /// Admin-only: point the treasury at a new address.
-    public entry fun update_treasury(
+    public fun update_treasury(
         _: &AdminCap,
         config: &mut PlatformConfig,
         new_treasury: address,

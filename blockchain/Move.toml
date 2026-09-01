@@ -3,12 +3,9 @@ name = "blockchain"
 edition = "2024"
 # If your Sui toolchain rejects `edition = "2024"`, use "2024.beta" instead.
 
-[dependencies]
-Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "framework/testnet" }
+# Sui, MoveStdlib, etc. are injected automatically by the Sui CLI — do not add
+# an explicit `Sui = { git = ... }` dependency here (it disables the auto-deps
+# and forces a full clone of the sui repo on every build).
 
 [addresses]
 blockchain = "0x0"
-
-[dev-dependencies]
-
-[dev-addresses]
