@@ -94,6 +94,33 @@ sui client publish --gas-budget 100000000
 Then update the PackageID + PlatformConfig id in `frontend/src/contracts/constants.ts`
 and `backend/.env` (+ AdminCap id in `backend/.env`).
 
+## Register a demo report
+
+Creates one on-chain `ResearchReport` so the frontend has something to buy. No
+API key or backend needed — just the AdminCap holder wallet:
+
+```bash
+sui client call \
+  --package 0x0047c06a35bf05d6148797eeeeada97d134f64410ff65ed88e8792770df87b9b \
+  --module news_platform \
+  --function register_report \
+  --args \
+    0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94 \
+    0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77 \
+    "BTC Intelligence Report" \
+    "0000000000000000000000000000000000000000000000000000000000000000" \
+    "demo-walrus-blob-id" \
+    0x6 \
+  --gas-budget 20000000
+```
+
+(PowerShell: use a backtick `` ` `` for line continuation, or put it all on one line.)
+In the output, the **Created Object** of type `...::news_platform::ResearchReport`
+is the report id — put it in `backend/.env` as `DEMO_REPORT_OBJECT_ID`.
+
+If the CLI rejects the string args for `vector<u8>`, pass hex instead, e.g.
+`0x42544320496e74656c6c6967656e6365205265706f7274` for the title.
+
 ## Move module: `blockchain::news_platform`
 
 | Object | Meaning |

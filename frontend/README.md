@@ -2,16 +2,20 @@
 
 React + TypeScript + Vite, on the **Sui 2.0 / gRPC dApp Kit** stack.
 
-## Status: scaffolded
+## Status: wired to the deployed contract + backend
 
-App skeleton and starter modules are committed. Dependencies are **not** installed
-yet and nothing has been run.
+Contract ids are filled in (`src/contracts/constants.ts`). `App.tsx` runs the
+real flow: ask → `POST /api/research` → summary + analysis → `PurchaseButton`
+(on-chain `purchase_report`) → `POST /api/reports/:hash/unlock` → full report.
 
 ```bash
 cd frontend
 npm install
-npm run dev            # http://localhost:5173
+npm run dev            # http://localhost:5173  (proxies /api -> :8787)
 ```
+
+Run `backend/` too (`npm run dev` there). The purchase button needs a registered
+`ResearchReport` — set `DEMO_REPORT_OBJECT_ID` in `backend/.env` (repo README).
 
 ## Stack — verified against the official Sui 2.0 migration guide
 

@@ -6,6 +6,7 @@ import { aiConfigured } from './ai/claude.js';
 import { sha256Hex } from './util/hash.js';
 import { uploadToWalrus } from './walrus/uploadReport.js';
 import { registerReport } from './blockchain/registerReport.js';
+import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
 import { issueNonce } from './auth/nonces.js';
 import { buildSignInMessage, verifyWalletSignature } from './auth/verifySignature.js';
@@ -45,13 +46,26 @@ app.post('/api/research', async (req, res) => {
     sources: report.sources,
     contentHash,
     generatedAt: report.generatedAt,
+    // The on-chain report the frontend should buy access to for this demo.
+    reportObjectId: config.demoReportObjectId || null,
   });
 });
 
-// TODO: gate this on proof the caller owns a ResearchAccess for `contentHash`.
-app.get('/api/reports/:contentHash/full', (req, res) => {
+// Premium body — gated on the caller owning a ResearchAccess for the demo report.
+app.post('/api/reports/:contentHash/unlock', async (req, res) => {
   const report = reportsByHash.get(req.params.contentHash);
   if (!report) return res.status(404).json({ error: 'unknown report' });
+
+  const address = String(req.body?.address ?? '').trim();
+  if (!address.startsWith('0x')) return res.status(400).json({ error: 'address required' });
+
+  if (!config.demoReportObjectId) {
+    return res.status(503).json({ error: 'DEMO_REPORT_OBJECT_ID not set' });
+  }
+  const allowed = await hasResearchAccess(address, config.demoReportObjectId);
+  if (!allowed) {
+    return res.status(403).json({ error: 'no ResearchAccess for this report' });
+  }
   res.json({ full: report.full });
 });
 

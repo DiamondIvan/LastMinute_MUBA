@@ -25,6 +25,10 @@ export const config = {
     adminCapId: process.env.ADMIN_CAP_ID ?? '',
   },
 
+  // A registered ResearchReport object id for the demo flow. Set after
+  // `register_report` (see repo README).
+  demoReportObjectId: process.env.DEMO_REPORT_OBJECT_ID ?? '',
+
   walrus: {
     publisherUrl: optional('WALRUS_PUBLISHER_URL', 'https://publisher.walrus-testnet.walrus.space'),
     aggregatorUrl: optional('WALRUS_AGGREGATOR_URL', 'https://aggregator.walrus-testnet.walrus.space'),

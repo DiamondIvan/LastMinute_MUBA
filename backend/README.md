@@ -31,7 +31,8 @@ src/
 │   └── synthesisAgent.ts   orchestrates the 4-call pipeline → { title, summary, full }
 ├── blockchain/
 │   ├── suiClient.ts         SuiGrpcClient + admin Ed25519Keypair
-│   └── registerReport.ts    builds+signs the register_report PTB, returns the new object id
+│   ├── registerReport.ts    builds+signs the register_report PTB, returns the new object id
+│   └── access.ts            hasResearchAccess(address, reportId) — read-only ownership check
 ├── walrus/uploadReport.ts   HTTP publisher upload / aggregator read
 ├── auth/
 │   ├── nonces.ts            in-memory nonce store
@@ -44,8 +45,8 @@ src/
 | Method + path | Purpose |
 | --- | --- |
 | `GET /health` | status, network, whether the chain env is configured |
-| `POST /api/research` | `{ question }` → runs the pipeline, returns the **free** summary + `contentHash` |
-| `GET /api/reports/:contentHash/full` | the premium body — **TODO: gate on ResearchAccess ownership** |
+| `POST /api/research` | `{ question }` → free summary + `analysis` + `contentHash` + `reportObjectId` (the demo report to buy) |
+| `POST /api/reports/:contentHash/unlock` | `{ address }` → `{ full }` **iff** that wallet owns a `ResearchAccess` for `DEMO_REPORT_OBJECT_ID` (else 403) |
 | `POST /api/reports/register` | admin: generate → Walrus → `register_report` on Sui. Needs the chain env. |
 | `POST /api/auth/nonce` | `{ address }` → `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` → `{ token }` |
