@@ -71,25 +71,28 @@ unbound module `transfer` / `object` / `tx_context`, add the matching
 `use sui::<module>;` line at the top of `news_platform.move` (newer toolchains
 import these implicitly; older ones do not).
 
-## Deploy to Sui Testnet
+## Deployed to Sui Testnet
+
+Current deployment (2026-09-02, tx `VqQjyNqo1AginGHMQ3HtiRwPvdVNDh2M3MbXB4Y7TjY`):
+
+| Value | ID | Wired into |
+| --- | --- | --- |
+| PackageID | `0x0047c06a35bf05d6148797eeeeada97d134f64410ff65ed88e8792770df87b9b` | `frontend/src/contracts/constants.ts`, `backend/.env.example` |
+| PlatformConfig (shared) | `0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77` | same |
+| AdminCap (deployer wallet) | `0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94` | `backend/.env` only — never the frontend |
+| UpgradeCap (deployer wallet) | `0xfd6fb64f453e3fec51501beed0eeb72d3a96171627b3f6c0fbc2d695c4105ab5` | keep for `sui client upgrade` |
+
+### Re-deploying (new package)
 
 ```bash
-sui client new-env --alias testnet --rpc https://fullnode.testnet.sui.io:443   # if missing
 sui client switch --env testnet
-sui client new-address ed25519            # if you have no address
-sui client faucet                         # get test SUI
-sui client gas                            # confirm you have coins
+sui client gas                            # need ~0.03 SUI; sui client faucet / faucet.sui.io if empty
 cd blockchain
 sui client publish --gas-budget 100000000
 ```
 
-Save these from the publish output — the frontend and backend need them:
-
-| Value | Used by | Goes in |
-| --- | --- | --- |
-| `PackageID` | frontend + backend | `frontend/src/contracts/constants.ts`, `backend/.env` |
-| `PlatformConfig` object id | frontend + backend | same |
-| `AdminCap` object id | backend only (never the frontend) | `backend/.env` |
+Then update the PackageID + PlatformConfig id in `frontend/src/contracts/constants.ts`
+and `backend/.env` (+ AdminCap id in `backend/.env`).
 
 ## Move module: `blockchain::news_platform`
 
