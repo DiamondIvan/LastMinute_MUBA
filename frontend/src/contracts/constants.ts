@@ -1,7 +1,6 @@
-// Fill these in after `sui client publish` (see repo README, "Deploy to Sui Testnet").
-// PLACEHOLDERS — the app will not transact until these are real object ids.
-export const PACKAGE_ID = '0xYOUR_PACKAGE_ID';
-export const CONFIG_ID = '0xYOUR_PLATFORMCONFIG_OBJECT_ID';
+// Deployed to Sui testnet on 2026-09-02 (tx VqQjyNqo1AginGHMQ3HtiRwPvdVNDh2M3MbXB4Y7TjY).
+export const PACKAGE_ID = '0x0047c06a35bf05d6148797eeeeada97d134f64410ff65ed88e8792770df87b9b';
+export const CONFIG_ID = '0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77';
 
 // Shared Clock object — fixed address on every Sui network.
 export const CLOCK_ID = '0x6';
