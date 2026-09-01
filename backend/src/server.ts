@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
+import { aiConfigured } from './ai/claude.js';
 import { sha256Hex } from './util/hash.js';
 import { uploadToWalrus } from './walrus/uploadReport.js';
 import { registerReport } from './blockchain/registerReport.js';
@@ -21,6 +22,7 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     network: config.sui.network,
+    aiConfigured: aiConfigured(),
     chainConfigured: chainConfigured(),
     admin: chainConfigured() ? safe(() => adminAddress()) : null,
   });
@@ -28,6 +30,7 @@ app.get('/health', (_req, res) => {
 
 // Run the AI pipeline. Returns the FREE summary + the content hash.
 app.post('/api/research', async (req, res) => {
+  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
@@ -54,6 +57,7 @@ app.get('/api/reports/:contentHash/full', (req, res) => {
 
 // Admin: generate (or accept) a report, store on Walrus, anchor on Sui.
 app.post('/api/reports/register', async (req, res) => {
+  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   if (!chainConfigured()) {
     return res.status(503).json({ error: 'chain not configured (ADMIN_SECRET_KEY / PACKAGE_ID / CONFIG_ID / ADMIN_CAP_ID)' });
   }
