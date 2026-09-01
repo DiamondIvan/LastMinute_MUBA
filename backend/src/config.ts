@@ -31,7 +31,8 @@ export const config = {
     epochs: Number(optional('WALRUS_EPOCHS', '5')),
   },
 
-  aiApiKey: process.env.AI_API_KEY ?? '',
+  // Read directly by the Anthropic SDK; kept here only for a startup readiness check.
+  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
   authSessionSecret: optional('AUTH_SESSION_SECRET', 'dev-only-change-me'),
 };
 
