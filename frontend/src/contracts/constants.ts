@@ -5,6 +5,11 @@ export const CONFIG_ID = '0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300f
 // Shared Clock object — fixed address on every Sui network.
 export const CLOCK_ID = '0x6';
 
+// A registered ResearchReport used by the verification demo. Set this to the
+// report whose content_hash is sha256(DEMO_REPORT_TEXT) — see repo README,
+// "Register the verification demo report". Empty string hides the verify panel.
+export const DEMO_REPORT_OBJECT_ID = '';
+
 // Must match the constants in blockchain/sources/news_platform.move.
 export const REPORT_PRICE_MIST = 5_000_000; // 0.005 SUI
 export const SUBSCRIPTION_PRICE_MIST = 10_000_000; // 0.01 SUI

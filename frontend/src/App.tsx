@@ -4,7 +4,9 @@ import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { dAppKit } from './dapp-kit';
 import { PurchaseButton } from './components/PurchaseButton';
 import { useResearchAccess } from './hooks/useResearchAccess';
-import { contractsConfigured } from './contracts/constants';
+import { VerifyPanel } from './components/VerifyPanel';
+import { contractsConfigured, DEMO_REPORT_OBJECT_ID } from './contracts/constants';
+import { DEMO_REPORT_TEXT } from './demoReport';
 import { research, unlockReport, type ResearchResponse } from './api';
 
 function WalletPanel() {
@@ -132,6 +134,9 @@ function Marketplace() {
       </p>
       <WalletPanel />
       <ResearchPanel />
+      {DEMO_REPORT_OBJECT_ID && (
+        <VerifyPanel reportObjectId={DEMO_REPORT_OBJECT_ID} initialText={DEMO_REPORT_TEXT} />
+      )}
       <AccessPanel />
     </main>
   );

@@ -14,11 +14,12 @@ export async function hasResearchAccess(
 ): Promise<boolean> {
   if (!config.contracts.packageId || !reportObjectId) return false;
 
+  // `include: { json: true }` — `content` is raw BCS bytes, not parsed fields.
   const res = await suiClient.listOwnedObjects({
     owner: address,
     type: RESEARCH_ACCESS_TYPE(),
     limit: 50,
-    include: { content: true },
+    include: { json: true },
   } as Parameters<typeof suiClient.listOwnedObjects>[0]);
 
   const now = Date.now();
@@ -34,8 +35,5 @@ export async function hasResearchAccess(
 }
 
 function readFields(obj: unknown): Record<string, unknown> {
-  const content = (obj as { content?: unknown })?.content as
-    | { fields?: Record<string, unknown>; json?: Record<string, unknown> }
-    | undefined;
-  return content?.fields ?? content?.json ?? {};
+  return ((obj as { json?: Record<string, unknown> })?.json ?? {}) as Record<string, unknown>;
 }
