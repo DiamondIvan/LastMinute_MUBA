@@ -9,7 +9,11 @@ import { registerReport } from './blockchain/registerReport.js';
 import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
 import { issueNonce } from './auth/nonces.js';
-import { buildSignInMessage, verifyWalletSignature } from './auth/verifySignature.js';
+import {
+  buildSignInMessage,
+  verifyWalletSignature,
+  verifySessionToken,
+} from './auth/verifySignature.js';
 import type { IntelligenceReport } from './ai/types.js';
 
 const app = express();
@@ -51,13 +55,26 @@ app.post('/api/research', async (req, res) => {
   });
 });
 
-// Premium body — gated on the caller owning a ResearchAccess for the demo report.
+/**
+ * Premium body — gated on the caller owning a ResearchAccess for the demo report.
+ *
+ * The address is taken from a verified session token, NEVER from the request
+ * body. Trusting a body-supplied address would let anyone who knows a buyer's
+ * wallet (public on any explorer) read the report without paying.
+ * See docs/SECURITY.md, Finding 1.
+ */
 app.post('/api/reports/:contentHash/unlock', async (req, res) => {
+  // Authenticate before touching the store, so an anonymous caller cannot probe
+  // which content hashes exist.
+  const address = addressFromBearer(req);
+  if (!address) {
+    return res
+      .status(401)
+      .json({ error: 'sign in first: POST /api/auth/nonce then /api/auth/verify' });
+  }
+
   const report = reportsByHash.get(req.params.contentHash);
   if (!report) return res.status(404).json({ error: 'unknown report' });
-
-  const address = String(req.body?.address ?? '').trim();
-  if (!address.startsWith('0x')) return res.status(400).json({ error: 'address required' });
 
   if (!config.demoReportObjectId) {
     return res.status(503).json({ error: 'DEMO_REPORT_OBJECT_ID not set' });
@@ -117,6 +134,13 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   console.error(err);
   res.status(500).json({ error: err instanceof Error ? err.message : 'internal error' });
 });
+
+/** The wallet address proven by the `Authorization: Bearer <token>` header, if any. */
+function addressFromBearer(req: express.Request): string | null {
+  const header = req.header('authorization') ?? '';
+  const match = header.match(/^Bearer\s+(.+)$/i);
+  return match ? verifySessionToken(match[1]!) : null;
+}
 
 function safe<T>(fn: () => T): T | null {
   try {

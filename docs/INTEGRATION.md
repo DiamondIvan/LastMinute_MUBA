@@ -236,13 +236,32 @@ Base `http://localhost:8787`; Vite proxies `/api` to it in dev.
 | --- | --- | --- |
 | `GET /health` | — | `{ ok, network, aiConfigured, chainConfigured, admin }` |
 | `POST /api/research` | `{ question }` | `{ title, summary, analysis, sources, contentHash, generatedAt, reportObjectId }` — the **free** tier |
-| `POST /api/reports/:contentHash/unlock` | `{ address }` | `{ full }`, or **403** if that wallet owns no `ResearchAccess` |
+| `POST /api/reports/:contentHash/unlock` | `{}` + `Authorization: Bearer <token>` | `{ full }`; **401** without a valid token, **403** if that wallet owns no `ResearchAccess` |
 | `POST /api/reports/register` | `{ question }` | `{ digest, reportObjectId, contentHash, blobId }` — admin only |
 | `POST /api/auth/nonce` | `{ address }` | `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` | `{ token }` |
 
 `/api/research` returns 503 without `ANTHROPIC_API_KEY`; `/api/reports/register`
 also needs the chain env.
+
+### Unlocking requires a wallet signature
+
+The server derives the caller address from the session token, never from the
+request body. Get a token first:
+
+```ts
+const { nonce, message } = await getNonce(address);
+const signed = await dAppKit.signPersonalMessage({
+  message: new TextEncoder().encode(message),
+});
+const { token } = await verifyAuth(address, nonce, signed.signature);
+
+const { full } = await unlockReport(contentHash, token); // sends Bearer header
+```
+
+The signature authorises nothing on-chain — it only proves control of the
+address. Nonces are single-use with a 5-minute TTL; tokens last 24h and are
+cached in `sessionStorage`. `frontend/src/lib/session.ts` wraps this.
 
 ## Environment
 

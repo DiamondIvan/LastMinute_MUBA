@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DAppKitProvider, useCurrentAccount } from '@mysten/dapp-kit-react';
+import { DAppKitProvider, useCurrentAccount, useDAppKit } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
 import { dAppKit } from './dapp-kit';
 import { PurchaseButton } from './components/PurchaseButton';
@@ -7,7 +7,8 @@ import { useResearchAccess } from './hooks/useResearchAccess';
 import { VerifyPanel } from './components/VerifyPanel';
 import { contractsConfigured, DEMO_REPORT_OBJECT_ID } from './contracts/constants';
 import { DEMO_REPORT_TEXT } from './demoReport';
-import { research, unlockReport, type ResearchResponse } from './api';
+import { research, unlockReport, ApiError, type ResearchResponse } from './api';
+import { getSessionToken, clearSession } from './lib/session';
 
 function WalletPanel() {
   const account = useCurrentAccount();
@@ -30,6 +31,7 @@ function AnalysisChips({ a }: { a: ResearchResponse['analysis'] }) {
 
 function ResearchPanel() {
   const account = useCurrentAccount();
+  const dAppKit = useDAppKit();
   const { reload } = useResearchAccess();
 
   const [question, setQuestion] = useState("What's happening with Bitcoin?");
@@ -52,18 +54,36 @@ function ResearchPanel() {
     }
   }
 
+  /**
+   * Unlocks the premium body. Requires a wallet signature the first time: the
+   * backend derives the caller address from the resulting session token rather
+   * than trusting one we send it.
+   */
   async function unlock() {
     if (!result || !account) return;
-    // The ResearchAccess object can lag a beat behind tx finality.
-    for (let i = 0; i < 4; i++) {
-      try {
-        const { full: body } = await unlockReport(result.contentHash, account.address);
-        setFull(body);
-        return;
-      } catch (e) {
-        if (i === 3) setError(e instanceof Error ? e.message : String(e));
-        else await new Promise((r) => setTimeout(r, 1500));
+    const address = account.address;
+    try {
+      let token = await getSessionToken(address, (args) => dAppKit.signPersonalMessage(args));
+
+      // The ResearchAccess object can lag a beat behind tx finality.
+      for (let i = 0; i < 4; i++) {
+        try {
+          const { full: body } = await unlockReport(result.contentHash, token);
+          setFull(body);
+          return;
+        } catch (e) {
+          // A stale or expired token: drop it, sign once more, retry.
+          if (e instanceof ApiError && e.status === 401 && i === 0) {
+            clearSession(address);
+            token = await getSessionToken(address, (args) => dAppKit.signPersonalMessage(args));
+            continue;
+          }
+          if (i === 3) throw e;
+          await new Promise((r) => setTimeout(r, 1500));
+        }
       }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
     }
   }
 
