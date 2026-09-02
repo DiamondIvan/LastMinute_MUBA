@@ -8,8 +8,10 @@ ones that are weak.
 
 The Move package is the strongest part: it holds no funds, uses capability-based
 authorisation, and its payment and expiry logic is covered by 17 passing tests.
-The **backend is where the real weaknesses are** — one of them, the unlock
-endpoint, is a genuine authorisation bypass and is listed as Finding 1.
+
+The one genuine authorisation bypass this review found — the unlock endpoint
+trusting a client-supplied address — has been **fixed** (Finding 1). The
+remaining items are accepted hackathon tradeoffs, each stated with its reason.
 
 ## Trust model
 
@@ -28,31 +30,42 @@ the text and compares to the chain directly.
 
 ## Findings
 
-### 1. `/api/reports/:hash/unlock` does not authenticate the caller — **High**
+### 1. Unlock endpoint authentication — **High — FIXED**
 
-`POST /api/reports/:contentHash/unlock` takes `{ address }` in the body and
-checks whether **that address** owns a `ResearchAccess`. It never proves the
-caller controls that address.
+*Was:* `POST /api/reports/:contentHash/unlock` took `{ address }` from the
+request body and checked whether **that address** owned a `ResearchAccess`,
+without ever proving the caller controlled it. Anyone who knew a buyer's wallet
+address — public on any explorer — could fetch the premium body without paying.
 
-Anyone who knows a buyer's wallet address — public information on any
-explorer — can send it and receive the premium body without paying.
-
-The on-chain access check is correct; the flaw is that we ask "does *this
-address* have access" instead of "does *this caller* have access".
-
-**Fix (not yet applied):** the nonce/signature endpoints already exist in
-`backend/src/auth/`. Require a session token from `POST /api/auth/verify` and
-take the address from the verified token, never from the request body.
+*Now:* the address comes from a verified session token
+(`Authorization: Bearer <token>`) and is never read from the body. The token is
+issued only after the wallet signs a server-generated nonce:
 
 ```
 POST /api/auth/nonce   { address }              -> { nonce, message }
-   wallet signs message
+   wallet signs `message`
 POST /api/auth/verify  { address, nonce, sig }  -> { token }
 POST /api/reports/:hash/unlock  Authorization: Bearer <token>
 ```
 
-Nothing else needs to change — `verifySessionToken()` already returns the
-verified address.
+`verifyWalletSignature` consumes the nonce (single use, 5-minute TTL),
+reconstructs the message server-side rather than trusting client-supplied bytes,
+verifies the signature with `verifyPersonalMessageSignature`, and confirms the
+recovered public key maps to the claimed address.
+
+Authentication also runs *before* the report lookup, so an anonymous caller
+cannot probe which content hashes exist.
+
+Verified against a running server:
+
+| Request | Response |
+| --- | --- |
+| body-supplied address, no token (the original attack) | **401** |
+| forged `Bearer` token | **401** |
+
+Remaining caveat: the session token is an HMAC blob signed with
+`AUTH_SESSION_SECRET`, valid 24h, with no revocation list. Adequate here; a real
+deployment wants short-lived tokens plus refresh.
 
 ### 2. No rate limiting on `/api/research` — **Medium**
 
@@ -190,12 +203,13 @@ a claim that the analysis you are reading is the one that was registered.
 
 | # | Finding | Severity | Status |
 | --- | --- | --- | --- |
-| 1 | Unlock endpoint trusts a client-supplied address | High | **open** — fix before any public deploy |
+| 1 | Unlock endpoint trusts a client-supplied address | High | **fixed** — wallet-signature session token |
 | 2 | No rate limit on the AI endpoint | Medium | accepted for local demo |
 | 3 | Admin key in plaintext `.env` | Medium | accepted for testnet |
 | 4 | In-memory report/nonce state | Low | accepted; Walrus is the path out |
 | 5 | Walrus blobs public | Low | by design, documented |
 | 6 | UpgradeCap retained | Low | deliberate, disclosed |
 
-Finding 1 is the only one that should block a public deployment. Everything else
-is a conscious hackathon tradeoff rather than an oversight.
+Finding 1 is fixed. Everything remaining is a conscious hackathon tradeoff
+rather than an oversight — Finding 2 (no rate limit on the AI endpoint) is the
+one to revisit before any public deployment.
