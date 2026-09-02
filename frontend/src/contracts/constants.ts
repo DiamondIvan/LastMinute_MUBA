@@ -8,7 +8,8 @@ export const CLOCK_ID = '0x6';
 // A registered ResearchReport used by the verification demo. Set this to the
 // report whose content_hash is sha256(DEMO_REPORT_TEXT) — see repo README,
 // "Register the verification demo report". Empty string hides the verify panel.
-export const DEMO_REPORT_OBJECT_ID = '';
+export const DEMO_REPORT_OBJECT_ID =
+  '0xc63fd6d76b573c69dfc54162b6ded41f5601c0354d2276330ae09297505d4a69';
 
 // Must match the constants in blockchain/sources/news_platform.move.
 export const REPORT_PRICE_MIST = 5_000_000; // 0.005 SUI

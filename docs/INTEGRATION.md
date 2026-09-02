@@ -14,6 +14,7 @@ is verified against the deployed package and the committed source.
 | PlatformConfig (shared) | `0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77` |
 | AdminCap (deployer wallet) | `0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94` |
 | UpgradeCap (deployer wallet) | `0xfd6fb64f453e3fec51501beed0eeb72d3a96171627b3f6c0fbc2d695c4105ab5` |
+| Demo ResearchReport (verifiable) | `0xc63fd6d76b573c69dfc54162b6ded41f5601c0354d2276330ae09297505d4a69` |
 | Clock (system) | `0x6` |
 | Publish digest | `VqQjyNqo1AginGHMQ3HtiRwPvdVNDh2M3MbXB4Y7TjY` |
 

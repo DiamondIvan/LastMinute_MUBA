@@ -81,6 +81,7 @@ Current deployment (2026-09-02, tx `VqQjyNqo1AginGHMQ3HtiRwPvdVNDh2M3MbXB4Y7TjY`
 | PlatformConfig (shared) | `0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77` | same |
 | AdminCap (deployer wallet) | `0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94` | `backend/.env` only — never the frontend |
 | UpgradeCap (deployer wallet) | `0xfd6fb64f453e3fec51501beed0eeb72d3a96171627b3f6c0fbc2d695c4105ab5` | keep for `sui client upgrade` |
+| Demo ResearchReport (verifiable) | `0xc63fd6d76b573c69dfc54162b6ded41f5601c0354d2276330ae09297505d4a69` | `DEMO_REPORT_OBJECT_ID` in `backend/.env` and `frontend/src/contracts/constants.ts` |
 
 ### Re-deploying (new package)
 
@@ -134,8 +135,10 @@ is the real SHA-256 of a known text.
 sui client call --package 0x0047c06a35bf05d6148797eeeeada97d134f64410ff65ed88e8792770df87b9b --module news_platform --function register_report --args 0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94 0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77 "BTC Intelligence Report (verifiable)" "f88ab174c94559767c52fc0864404a241f8c5c90691dde84779e04ef149525c9" "demo-walrus-blob-id" 0x6 --gas-budget 20000000
 ```
 
-Take the created `ResearchReport` ObjectID and set it as `DEMO_REPORT_OBJECT_ID`
-in `frontend/src/contracts/constants.ts`. The Verify panel appears once it is set.
+**Already done** — the current demo report is `0xc63fd6d76b573c69dfc54162b6ded41f5601c0354d2276330ae09297505d4a69`,
+registered with the real hash and wired into both `backend/.env.example` and
+`frontend/src/contracts/constants.ts`. Re-run the command above only if you
+change `DEMO_REPORT_TEXT`.
 
 If you edit `DEMO_REPORT_TEXT`, the hash changes: run the app, click **Verify**,
 and the failure panel prints the new hash — register a fresh report with that.
