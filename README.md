@@ -121,6 +121,25 @@ is the report id — put it in `backend/.env` as `DEMO_REPORT_OBJECT_ID`.
 If the CLI rejects the string args for `vector<u8>`, pass hex instead, e.g.
 `0x42544320496e74656c6c6967656e6365205265706f7274` for the title.
 
+## Register the verification demo report
+
+The report registered above uses a placeholder hash, so verification will always
+fail against it. For the **Verify** demo you need a report whose `content_hash`
+is the real SHA-256 of a known text.
+
+`frontend/src/demoReport.ts` holds that text; its hash is
+`f88ab174c94559767c52fc0864404a241f8c5c90691dde84779e04ef149525c9`.
+
+```bash
+sui client call --package 0x0047c06a35bf05d6148797eeeeada97d134f64410ff65ed88e8792770df87b9b --module news_platform --function register_report --args 0xa8d9900d8e2f9e2264d229297c97c2e8ccce5383e9da9997527d960e591edb94 0x6df54fa32eff53523793d1ee1fe602076309dbede5803b9e300ffffb11b90c77 "BTC Intelligence Report (verifiable)" "f88ab174c94559767c52fc0864404a241f8c5c90691dde84779e04ef149525c9" "demo-walrus-blob-id" 0x6 --gas-budget 20000000
+```
+
+Take the created `ResearchReport` ObjectID and set it as `DEMO_REPORT_OBJECT_ID`
+in `frontend/src/contracts/constants.ts`. The Verify panel appears once it is set.
+
+If you edit `DEMO_REPORT_TEXT`, the hash changes: run the app, click **Verify**,
+and the failure panel prints the new hash — register a fresh report with that.
+
 ## Move module: `blockchain::news_platform`
 
 | Object | Meaning |
@@ -148,6 +167,19 @@ Design notes:
   deterministic. The frontend splits the exact coin with `coinWithBalance`.
 - `register_report` and `purchase_report` both take the shared `Clock` (`0x6`)
   for timestamps — pass `tx.object("0x6")` as the clock argument.
+
+## Why Sui (the judge question)
+
+| Feature | Why it needs a chain |
+| --- | --- |
+| Payment + access in one step | `purchase_report` settles payment **and** mints the access object atomically in one PTB — one wallet approval, no reconciliation between a payment processor and a database. |
+| Access is an owned object | `ResearchAccess` lives in the buyer's wallet. Access is portable and independently checkable; it is not a boolean row in our database that we could flip. |
+| Provenance | The report's SHA-256 is anchored on-chain with its creator and timestamp. Anyone can verify a report is the exact registered version **without trusting our server** — the check is browser-side against the chain. |
+| No custody | Payments forward to the treasury inside the same call, so the contract never holds a balance. There is no pot to drain and no withdraw function to get wrong. |
+
+What this is **not**: the on-chain record is a provenance and integrity record —
+proof that this exact version existed and was registered by that wallet. It is
+not a legal copyright claim.
 
 ## Priorities (from the track rubric: *complete > complexity*)
 

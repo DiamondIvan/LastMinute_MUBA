@@ -32,19 +32,21 @@ export function useResearchAccess() {
     setLoading(true);
     setError(null);
     try {
+      // `include: { json: true }` — the `content` field is raw BCS bytes, not
+      // parsed fields. Field names can vary by transport, so read defensively.
       const res = await client.listOwnedObjects({
         owner: account.address,
         type: RESEARCH_ACCESS_TYPE,
         limit: 50,
-        include: { content: true },
+        include: { json: true },
       } as Parameters<typeof client.listOwnedObjects>[0]);
 
       const parsed: ResearchAccessObject[] = (res.objects ?? []).map((o: any) => {
-        const fields = o?.content?.fields ?? o?.content?.json ?? {};
+        const json = (o?.json ?? {}) as Record<string, unknown>;
         return {
           objectId: o.objectId,
-          reportId: fields.report_id ?? fields.reportId,
-          expiresAt: fields.expires_at ?? fields.expiresAt,
+          reportId: (json.report_id ?? json.reportId) as string | undefined,
+          expiresAt: (json.expires_at ?? json.expiresAt) as string | undefined,
           raw: o,
         };
       });
