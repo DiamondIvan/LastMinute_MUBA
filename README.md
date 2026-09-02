@@ -168,6 +168,25 @@ Design notes:
 - `register_report` and `purchase_report` both take the shared `Clock` (`0x6`)
   for timestamps — pass `tx.object("0x6")` as the clock argument.
 
+## Test coverage
+
+`sui move test` — **17/17 passing**.
+
+| Area | Covered |
+| --- | --- |
+| Subscription | exact payment issues a pass with correct owner + expiry; underpayment aborts; **overpayment aborts** (exact-match policy); payment forwarded to treasury |
+| Expiry | active before expiry, inactive at and after it (`now < expires_at`, exclusive) |
+| Renewal | while active, extends from the **existing expiry** (no lost time); after expiry, restarts from now; a non-owner holding the object still cannot renew (`ENotOwner`) |
+| Provenance | title / content hash / Walrus id / creator / timestamp all recorded; duplicate content hash aborts (`EReportAlreadyExists`); two different hashes both register |
+| Purchase | buyer receives an owned `ResearchAccess` pointing at the right report, with correct purchase time and expiry; wrong price aborts; payment forwarded to treasury |
+| Access | active before expiry, inactive at and after |
+| Admin | AdminCap holder can move the treasury, and payments follow it |
+
+Not runtime-testable by design: "a non-admin cannot register a report or change
+config". `register_report` and `update_treasury` take `&AdminCap`, so a caller
+without that object cannot construct the call at all — authorisation is enforced
+by the type system, not a checked condition.
+
 ## Why Sui (the judge question)
 
 | Feature | Why it needs a chain |

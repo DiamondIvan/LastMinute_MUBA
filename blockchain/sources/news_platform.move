@@ -277,4 +277,36 @@ module blockchain::news_platform {
 
     #[test_only]
     public fun access_report_id(access: &ResearchAccess): ID { access.report_id }
+
+    #[test_only]
+    public fun pass_owner(pass: &PremiumPass): address { pass.owner }
+
+    #[test_only]
+    public fun access_expiry(access: &ResearchAccess): u64 { access.expires_at }
+
+    #[test_only]
+    public fun access_purchased_at(access: &ResearchAccess): u64 { access.purchased_at }
+
+    #[test_only]
+    public fun report_title(report: &ResearchReport): String { report.title }
+
+    #[test_only]
+    public fun report_content_hash(report: &ResearchReport): String { report.content_hash }
+
+    #[test_only]
+    public fun report_walrus_blob_id(report: &ResearchReport): String { report.walrus_blob_id }
+
+    #[test_only]
+    public fun report_creator(report: &ResearchReport): address { report.creator }
+
+    #[test_only]
+    public fun report_created_at(report: &ResearchReport): u64 { report.created_at }
+
+    #[test_only]
+    public fun config_treasury(config: &PlatformConfig): address { config.treasury }
+
+    #[test_only]
+    public fun config_registry_size(config: &PlatformConfig): u64 {
+        table::length(&config.report_registry)
+    }
 }
