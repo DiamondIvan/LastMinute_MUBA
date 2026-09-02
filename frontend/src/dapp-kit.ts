@@ -1,19 +1,19 @@
 import { createDAppKit } from '@mysten/dapp-kit-react';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
 
-// Sui 2.0 uses gRPC — public JSON-RPC fullnodes are deprecated/off.
-const GRPC_URLS = {
+const networkUrls = {
   testnet: 'https://fullnode.testnet.sui.io:443',
+  mainnet: 'https://fullnode.mainnet.sui.io:443',
 } as const;
 
 export const dAppKit = createDAppKit({
-  networks: ['testnet'],
-  createClient(network) {
-    return new SuiGrpcClient({ network, baseUrl: GRPC_URLS[network] });
-  },
+  networks: ['testnet', 'mainnet'],
+  createClient: (network) => new SuiGrpcClient({ 
+    network, 
+    baseUrl: networkUrls[network as keyof typeof networkUrls] 
+  }),
 });
 
-// Global type registration — lets the hooks infer network + client types.
 declare module '@mysten/dapp-kit-react' {
   interface Register {
     dAppKit: typeof dAppKit;

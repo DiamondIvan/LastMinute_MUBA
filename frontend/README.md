@@ -8,6 +8,26 @@ Contract ids are filled in (`src/contracts/constants.ts`). `App.tsx` runs the
 real flow: ask → `POST /api/research` → summary + analysis → `PurchaseButton`
 (on-chain `purchase_report`) → `POST /api/reports/:hash/unlock` → full report.
 
+## Prerequisites
+
+Ensure you have the following installed on your machine:
+- **Node.js** (v18+ recommended)
+- **npm** (or pnpm/yarn)
+- **Sui Wallet** browser extension (configured to **Testnet** with test SUI for transactions)
+
+---
+
+## Required Dependencies & Packages
+
+The frontend relies on the following core libraries (automatically installed via `package.json`):
+
+* **React & Routing**: `react`, `react-dom`, `react-router-dom`
+* **Sui Web3 SDK**: `@mysten/sui`, `@mysten/dapp-kit-react`
+* **Data Fetching**: `@tanstack/react-query`
+* **Data Visualization**: `recharts`
+* **Styling**: `tailwindcss`, `postcss`, `autoprefixer`
+
+## Getting Started & Installation
 ```bash
 cd frontend
 npm install
