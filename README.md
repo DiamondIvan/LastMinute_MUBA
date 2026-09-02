@@ -168,6 +168,13 @@ Design notes:
 - `register_report` and `purchase_report` both take the shared `Clock` (`0x6`)
   for timestamps — pass `tx.object("0x6")` as the clock argument.
 
+## Documentation
+
+| Doc | Contents |
+| --- | --- |
+| [docs/INTEGRATION.md](docs/INTEGRATION.md) | Contract API as the app calls it: object ids, function signatures, events, error codes, TypeScript examples, backend HTTP API, env vars |
+| [docs/SECURITY.md](docs/SECURITY.md) | Trust model, findings with severities, what the Move package actually enforces, and the limits of what an on-chain record proves |
+
 ## Test coverage
 
 `sui move test` — **17/17 passing**.
