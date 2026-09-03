@@ -8,6 +8,7 @@ const networkUrls = {
 
 export const dAppKit = createDAppKit({
   networks: ['testnet', 'mainnet'],
+  defaultNetwork: 'testnet', // Forces the dApp to initialize on Testnet
   createClient: (network) => new SuiGrpcClient({ 
     network, 
     baseUrl: networkUrls[network as keyof typeof networkUrls] 
