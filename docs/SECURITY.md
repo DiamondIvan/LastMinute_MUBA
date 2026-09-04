@@ -241,6 +241,34 @@ No token, no NFT, no DAO, no staking, no marketplace, no on-chain article text,
 no AI in Move. Each of those would add attack surface without adding product
 value.
 
+### Live end-to-end verification (2026-09-04)
+
+Everything above is proven by the 17 Move unit tests plus reading the code.
+Separately, the real user-facing path was run once, live, with a real wallet:
+
+connected a genuine Slush wallet (testnet, 2 SUI funded via faucet) →
+`TransactionScreen` read the real on-chain `ResearchReport` → the real
+"already own access" ownership check correctly reported false → clicked
+Purchase → Slush prompted for approval → approved → `purchase_report`
+executed on Sui testnet.
+
+Confirmed independently afterward — not by trusting the app's own UI, by
+querying the chain directly with a hand-written script (`SuiGrpcClient`,
+bypassing this project's own client code entirely):
+
+- `listEvents({ filter: { eventType: '<PACKAGE_ID>::news_platform::ReportPurchased' } })`
+  returned exactly one event, ever, for this contract:
+  `{ buyer: 0x919145c7...632e5c64e, report_id: <DEMO_REPORT_OBJECT_ID>, amount: 5000000 }`
+  — the exact price, the exact demo report, the wallet that just signed.
+- `getTransaction({ digest: '5W5SAnoeaAn1epAihto9zjQbgA9Mp773o9Zjj5DHkpEx' })`
+  confirmed `status.success: true`, epoch 1212, checkpoint 379809534.
+
+This is the first confirmed live run of the buy flow against the deployed
+package with a real wallet, rather than only Move unit tests or a simulated
+frontend. `TransactionScreen` previously simulated a purchase (split SUI, sent
+it to `CONFIG_ID`, no Move call) and was rewritten to call `purchase_report`
+for real; this is the record that the rewrite actually works end to end.
+
 ---
 
 ## Claims we make, and their limits
