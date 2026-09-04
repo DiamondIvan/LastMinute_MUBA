@@ -1,0 +1,621 @@
+{
+  "latestForecast": {
+    "timestamp": 1788516049231,
+    "data": {
+      "news": [
+        {
+          "source": "https://www.chainalysis.com/",
+          "title": "SentinelUnderstand a stablecoins’s risk profile",
+          "link": "https://www.chainalysis.com/product/sentinel/"
+        },
+        {
+          "source": "https://www.chainalysis.com/",
+          "title": "Stablecoin Risk ManagementCompliance-led growth for the stablecoin economy",
+          "link": "https://www.chainalysis.com/stablecoin-risk-management/"
+        },
+        {
+          "source": "https://www.chainalysis.com/",
+          "title": "Screen and assess risk across stablecoins, wallets, and VASPs",
+          "link": "https://www.chainalysis.com/product/address-screening/"
+        },
+        {
+          "source": "https://www.chainalysis.com/",
+          "title": "Stablecoin Risk Management",
+          "link": "https://www.chainalysis.com/stablecoin-risk-management/"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "Stablecoin Payments",
+          "link": "https://www.circle.com/cpn/stablecoin-payments"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "Circle Partner Stablecoins",
+          "link": "https://www.circle.com/partner-stablecoins"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "Simplify Stablecoin Adoption With CPN Managed Payments",
+          "link": "https://www.circle.com/blog/simplify-stablecoin-adoption-with-cpn-managed-payments"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "Introducing Arc: An Open Layer-1 Blockchain Purpose-Built for Stablecoin Finance",
+          "link": "https://www.circle.com/blog/introducing-arc-an-open-layer-1-blockchain-purpose-built-for-stablecoin-finance"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "CPN Fiat Payments",
+          "link": "https://www.circle.com/cpn/fiat-payments"
+        },
+        {
+          "source": "https://www.circle.com/blog",
+          "title": "CPN Stablecoin Payments",
+          "link": "https://www.circle.com/cpn/stablecoin-payments"
+        }
+      ],
+      "strategyPlan": "DUMMY DATA: The current market indicates a strong shift towards regulated stablecoins like USDC. Institutional inflows are steady.",
+      "riskAnalysis": "DUMMY DATA: Key risks identified in recent news include increased regulatory scrutiny from the SEC on non-compliant fiat-backed tokens.",
+      "importantNewsIndices": [
+        0
+      ],
+      "assetPredictions": [
+        {
+          "symbol": "USDsui",
+          "predictedGrowth": "+6.08%"
+        },
+        {
+          "symbol": "USDC",
+          "predictedGrowth": "+7.43%"
+        },
+        {
+          "symbol": "FDUSD",
+          "predictedGrowth": "+1.09%"
+        },
+        {
+          "symbol": "BUCK",
+          "predictedGrowth": "+6.52%"
+        },
+        {
+          "symbol": "USDY",
+          "predictedGrowth": "+2.58%"
+        }
+      ]
+    }
+  },
+  "newsImpacts": {
+    "coin-USDC": {
+      "timestamp": 1788516053370,
+      "data": {
+        "conclusion": "Based on recent news, USDC continues to demonstrate strong market positioning with expanding ecosystem integrations and favorable yield conditions. The overall market overview is cautiously optimistic, driven by stable liquidity and increasing decentralized application usage.",
+        "pegHealth": "The peg for USDC remains extremely stable at 1.00. Collateralization ratios and deep liquidity pools provide a robust buffer against market volatility.",
+        "investmentRisk": "Low to Moderate. While smart contract and systemic risks always exist in DeFi, recent audits and conservative treasury management suggest a highly secure environment.",
+        "futureChart": [
+          {
+            "day": "Day 1",
+            "price": 0.9996695034936546
+          },
+          {
+            "day": "Day 2",
+            "price": 1.000116350542278
+          },
+          {
+            "day": "Day 3",
+            "price": 0.9996337136220795
+          },
+          {
+            "day": "Day 4",
+            "price": 0.9999502742966228
+          },
+          {
+            "day": "Day 5",
+            "price": 1.0005849117910017
+          },
+          {
+            "day": "Day 6",
+            "price": 1.0034724140955689
+          },
+          {
+            "day": "Day 7",
+            "price": 1.001261759266202
+          },
+          {
+            "day": "Day 8",
+            "price": 1.0031840748685061
+          },
+          {
+            "day": "Day 9",
+            "price": 1.003443934859824
+          },
+          {
+            "day": "Day 10",
+            "price": 1.0036701841575948
+          },
+          {
+            "day": "Day 11",
+            "price": 1.0019894933536198
+          },
+          {
+            "day": "Day 12",
+            "price": 1.001677550536423
+          },
+          {
+            "day": "Day 13",
+            "price": 1.002779462130107
+          },
+          {
+            "day": "Day 14",
+            "price": 1.0006646402255075
+          },
+          {
+            "day": "Day 15",
+            "price": 1.003906838626939
+          },
+          {
+            "day": "Day 16",
+            "price": 0.999139315364228
+          },
+          {
+            "day": "Day 17",
+            "price": 1.0036687871843855
+          },
+          {
+            "day": "Day 18",
+            "price": 1.003855565464297
+          },
+          {
+            "day": "Day 19",
+            "price": 1.0030335949022215
+          },
+          {
+            "day": "Day 20",
+            "price": 1.0030847945346633
+          },
+          {
+            "day": "Day 21",
+            "price": 1.001443487929375
+          },
+          {
+            "day": "Day 22",
+            "price": 1.0002227496006781
+          },
+          {
+            "day": "Day 23",
+            "price": 1.0026056882284646
+          },
+          {
+            "day": "Day 24",
+            "price": 1.0007286131472761
+          },
+          {
+            "day": "Day 25",
+            "price": 1.002251883334979
+          },
+          {
+            "day": "Day 26",
+            "price": 1.002549077157597
+          },
+          {
+            "day": "Day 27",
+            "price": 1.0039046424046643
+          },
+          {
+            "day": "Day 28",
+            "price": 0.9995867237437858
+          },
+          {
+            "day": "Day 29",
+            "price": 1.0038282503610905
+          },
+          {
+            "day": "Day 30",
+            "price": 1.001329261531473
+          }
+        ],
+        "pastChart": [
+          {
+            "day": "Day -30",
+            "price": 0.9990168643202708
+          },
+          {
+            "day": "Day -29",
+            "price": 1.0029297048163828
+          },
+          {
+            "day": "Day -28",
+            "price": 1.0002036178770617
+          },
+          {
+            "day": "Day -27",
+            "price": 0.9987795329846398
+          },
+          {
+            "day": "Day -26",
+            "price": 0.9996067918510967
+          },
+          {
+            "day": "Day -25",
+            "price": 0.9996906101732814
+          },
+          {
+            "day": "Day -24",
+            "price": 0.998938443048784
+          },
+          {
+            "day": "Day -23",
+            "price": 1.0024265746860652
+          },
+          {
+            "day": "Day -22",
+            "price": 1.0003283166907115
+          },
+          {
+            "day": "Day -21",
+            "price": 0.9995521801694487
+          },
+          {
+            "day": "Day -20",
+            "price": 0.9980992359597851
+          },
+          {
+            "day": "Day -19",
+            "price": 1.0019713888715012
+          },
+          {
+            "day": "Day -18",
+            "price": 1.0008547320787795
+          },
+          {
+            "day": "Day -17",
+            "price": 1.0018544917141323
+          },
+          {
+            "day": "Day -16",
+            "price": 1.0014573045365633
+          },
+          {
+            "day": "Day -15",
+            "price": 1.0000481339068938
+          },
+          {
+            "day": "Day -14",
+            "price": 1.0027467093096385
+          },
+          {
+            "day": "Day -13",
+            "price": 1.0019686599537572
+          },
+          {
+            "day": "Day -12",
+            "price": 1.0021911333809892
+          },
+          {
+            "day": "Day -11",
+            "price": 0.9985199204006727
+          },
+          {
+            "day": "Day -10",
+            "price": 1.0002493417913072
+          },
+          {
+            "day": "Day -9",
+            "price": 0.9991985123932869
+          },
+          {
+            "day": "Day -8",
+            "price": 0.9988550856322549
+          },
+          {
+            "day": "Day -7",
+            "price": 1.0012752369886118
+          },
+          {
+            "day": "Day -6",
+            "price": 1.0016160721332539
+          },
+          {
+            "day": "Day -5",
+            "price": 0.9998278505005089
+          },
+          {
+            "day": "Day -4",
+            "price": 0.9991068180675087
+          },
+          {
+            "day": "Day -3",
+            "price": 1.0018700298337793
+          },
+          {
+            "day": "Day -2",
+            "price": 0.9986756403637889
+          },
+          {
+            "day": "Day -1",
+            "price": 1.0028076884765225
+          }
+        ]
+      }
+    },
+    "Stablecoin Risk ManagementCompliance-led growth for the stablecoin economy-USDsui-0": {
+      "timestamp": 1788516191113,
+      "data": {
+        "marketImpact": "DUMMY DATA: This news signifies a potential 15% increase in cross-chain liquidity for USDsui.",
+        "investorActionPlan": "DUMMY DATA: Based on your balance of 0 SUI, we suggest allocating 10% (0.00 SUI) into USDsui to capture the upside.",
+        "chartData": [
+          {
+            "day": "Day 1",
+            "price": 1
+          },
+          {
+            "day": "Day 5",
+            "price": 1.01
+          },
+          {
+            "day": "Day 10",
+            "price": 1.03
+          },
+          {
+            "day": "Day 20",
+            "price": 1.05
+          },
+          {
+            "day": "Day 30",
+            "price": 1.08
+          }
+        ]
+      }
+    },
+    "coin-FDUSD": {
+      "timestamp": 1788516217086,
+      "data": {
+        "conclusion": "Based on recent news, FDUSD continues to demonstrate strong market positioning with expanding ecosystem integrations and favorable yield conditions. The overall market overview is cautiously optimistic, driven by stable liquidity and increasing decentralized application usage.",
+        "pegHealth": "The peg for FDUSD remains extremely stable at 1.00. Collateralization ratios and deep liquidity pools provide a robust buffer against market volatility.",
+        "investmentRisk": "Low to Moderate. While smart contract and systemic risks always exist in DeFi, recent audits and conservative treasury management suggest a highly secure environment.",
+        "futureChart": [
+          {
+            "day": "Day 1",
+            "price": 1.0006592401994454
+          },
+          {
+            "day": "Day 2",
+            "price": 1.0027379773671428
+          },
+          {
+            "day": "Day 3",
+            "price": 0.9999845612728028
+          },
+          {
+            "day": "Day 4",
+            "price": 0.9999010707053307
+          },
+          {
+            "day": "Day 5",
+            "price": 1.0016984474378658
+          },
+          {
+            "day": "Day 6",
+            "price": 1.0019607186921964
+          },
+          {
+            "day": "Day 7",
+            "price": 1.0031269953406272
+          },
+          {
+            "day": "Day 8",
+            "price": 1.0027235346411711
+          },
+          {
+            "day": "Day 9",
+            "price": 1.0035847308665262
+          },
+          {
+            "day": "Day 10",
+            "price": 1.0003113756313002
+          },
+          {
+            "day": "Day 11",
+            "price": 1.002984049890591
+          },
+          {
+            "day": "Day 12",
+            "price": 1.0037860541468562
+          },
+          {
+            "day": "Day 13",
+            "price": 1.0033883564139912
+          },
+          {
+            "day": "Day 14",
+            "price": 1.0032766380753575
+          },
+          {
+            "day": "Day 15",
+            "price": 0.9995551574604525
+          },
+          {
+            "day": "Day 16",
+            "price": 1.0028106504022047
+          },
+          {
+            "day": "Day 17",
+            "price": 1.0029488925750065
+          },
+          {
+            "day": "Day 18",
+            "price": 1.0034225490939872
+          },
+          {
+            "day": "Day 19",
+            "price": 1.003525794497531
+          },
+          {
+            "day": "Day 20",
+            "price": 1.000074112390246
+          },
+          {
+            "day": "Day 21",
+            "price": 1.00252582003164
+          },
+          {
+            "day": "Day 22",
+            "price": 1.0009034587686272
+          },
+          {
+            "day": "Day 23",
+            "price": 1.0008786716711238
+          },
+          {
+            "day": "Day 24",
+            "price": 1.001372710417836
+          },
+          {
+            "day": "Day 25",
+            "price": 1.003206717195715
+          },
+          {
+            "day": "Day 26",
+            "price": 1.0004075588197194
+          },
+          {
+            "day": "Day 27",
+            "price": 1.0025852098671455
+          },
+          {
+            "day": "Day 28",
+            "price": 1.001691705129818
+          },
+          {
+            "day": "Day 29",
+            "price": 1.0039747620230766
+          },
+          {
+            "day": "Day 30",
+            "price": 1.0005470809712964
+          }
+        ],
+        "pastChart": [
+          {
+            "day": "Day -30",
+            "price": 0.9988175061122284
+          },
+          {
+            "day": "Day -29",
+            "price": 1.0016421846607513
+          },
+          {
+            "day": "Day -28",
+            "price": 1.0006552474210715
+          },
+          {
+            "day": "Day -27",
+            "price": 1.00249690228157
+          },
+          {
+            "day": "Day -26",
+            "price": 1.0023209967040927
+          },
+          {
+            "day": "Day -25",
+            "price": 1.0020438132929135
+          },
+          {
+            "day": "Day -24",
+            "price": 0.9998733355080518
+          },
+          {
+            "day": "Day -23",
+            "price": 1.0011121134419658
+          },
+          {
+            "day": "Day -22",
+            "price": 1.0019507731676824
+          },
+          {
+            "day": "Day -21",
+            "price": 0.999507513751986
+          },
+          {
+            "day": "Day -20",
+            "price": 1.0006568037390666
+          },
+          {
+            "day": "Day -19",
+            "price": 0.9988786345596607
+          },
+          {
+            "day": "Day -18",
+            "price": 1.0022071829309587
+          },
+          {
+            "day": "Day -17",
+            "price": 1.0011495737806284
+          },
+          {
+            "day": "Day -16",
+            "price": 1.0002407428015057
+          },
+          {
+            "day": "Day -15",
+            "price": 1.0002238137588615
+          },
+          {
+            "day": "Day -14",
+            "price": 1.000948448901191
+          },
+          {
+            "day": "Day -13",
+            "price": 0.9995676576805137
+          },
+          {
+            "day": "Day -12",
+            "price": 1.0022229171866959
+          },
+          {
+            "day": "Day -11",
+            "price": 1.0021791023732827
+          },
+          {
+            "day": "Day -10",
+            "price": 0.9993027621876822
+          },
+          {
+            "day": "Day -9",
+            "price": 0.9997065334778914
+          },
+          {
+            "day": "Day -8",
+            "price": 1.0020093216838932
+          },
+          {
+            "day": "Day -7",
+            "price": 0.9991805234768472
+          },
+          {
+            "day": "Day -6",
+            "price": 1.0002940802727178
+          },
+          {
+            "day": "Day -5",
+            "price": 0.9986764780598976
+          },
+          {
+            "day": "Day -4",
+            "price": 0.9989824183702503
+          },
+          {
+            "day": "Day -3",
+            "price": 1.0028317442643035
+          },
+          {
+            "day": "Day -2",
+            "price": 0.9992987467586658
+          },
+          {
+            "day": "Day -1",
+            "price": 0.9980450043142934
+          }
+        ]
+      }
+    }
+  }
+}

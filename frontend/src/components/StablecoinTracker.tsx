@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import type { TokenBalance } from '../hooks/useStablecoinBalances';
 
@@ -228,7 +229,8 @@ interface StablecoinTrackerProps {
 }
 
 export function StablecoinTracker({ liveTokens }: StablecoinTrackerProps) {
-  const [selectedSymbol, setSelectedSymbol] = useState<string>('USDC');
+  const navigate = useNavigate();
+  const [selectedSymbol] = useState<string>('USDC');
   const [timeframe, setTimeframe] = useState<Timeframe>('7D');
 
   const coins = useMemo(() => {
@@ -340,7 +342,7 @@ export function StablecoinTracker({ liveTokens }: StablecoinTrackerProps) {
             return (
               <div
                 key={coin.symbol}
-                onClick={() => setSelectedSymbol(coin.symbol)}
+                onClick={() => navigate(`/coin/${coin.symbol}`)}
                 className={`py-3 px-3 rounded-2xl flex items-center justify-between cursor-pointer transition-all ${
                   isSelected ? 'bg-purple-50/70 border border-purple-100' : 'hover:bg-gray-50'
                 }`}

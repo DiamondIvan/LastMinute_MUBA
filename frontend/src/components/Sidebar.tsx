@@ -35,8 +35,19 @@ export function Sidebar() {
           >
             Latest Forecast
           </NavLink>
-          <a href="#intelligence" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">Intelligence</a>
-          <a href="#history" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">History</a>
+          <NavLink
+            to="/transaction"
+            className={({ isActive }) =>
+              `flex items-center gap-3 px-4 py-3 rounded-2xl font-bold text-sm transition-all ${
+                isActive
+                  ? 'bg-brand text-white shadow-md shadow-brand/20'
+                  : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+              }`
+            }
+          >
+            Transaction
+          </NavLink>
+          <a href="#history" className="flex items-center gap-3 px-4 py-3 rounded-2xl font-medium text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">History</a>
           <a href="#settings" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">Settings</a>
         </nav>
       </div>

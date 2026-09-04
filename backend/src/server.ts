@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { getCachedForecast, setCachedForecast, getCachedNewsImpact, setCachedNewsImpact, getCachedCoinAnalysis, setCachedCoinAnalysis } from './db/newsCache.js';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
 import { aiConfigured } from './ai/claude.js';
@@ -9,6 +10,9 @@ import { encryptReportFor, decryptReport } from './seal/sealService.js';
 import { registerReport } from './blockchain/registerReport.js';
 import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
+import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
+import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
+// import { openRouterConfigured } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
 import {
   buildSignInMessage,
@@ -185,6 +189,85 @@ app.post('/api/reports/register', async (req, res) => {
   });
 
   res.json({ digest, reportObjectId, contentHash, blobId });
+});
+
+app.get('/api/forecast/stablecoin-news', async (_req, res) => {
+  try {
+    const cached = await getCachedForecast();
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // 1. Scrape news
+    const news = await scrapeStablecoinNews();
+
+    if (news.length === 0) {
+       return res.status(500).json({ error: 'Failed to scrape any news data.' });
+    }
+
+    // 2. Analyze with AI (includes importantNewsIndices)
+    const analysis = await analyzeStablecoinNews(news);
+
+    // 3. Asset predictions (Mocking the list of assets for now, or we can just send the ones we care about)
+    const assetsToPredict = [
+      { symbol: 'USDsui' }, { symbol: 'USDC' }, { symbol: 'FDUSD' }, { symbol: 'BUCK' }, { symbol: 'USDY' }
+    ];
+    const assetPredictions = await analyzeAssetPredictions(assetsToPredict);
+
+    // 4. Return combined response
+    const finalData = {
+      news,
+      strategyPlan: analysis.strategyPlan,
+      riskAnalysis: analysis.riskAnalysis,
+      importantNewsIndices: analysis.importantNewsIndices,
+      assetPredictions
+    };
+
+    await setCachedForecast(finalData);
+    res.json(finalData);
+  } catch (error) {
+    console.error('Stablecoin news error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Analysis failed' });
+  }
+});
+
+app.post('/api/forecast/news-impact', async (req, res) => {
+  try {
+    const title = String(req.body?.title ?? '').trim();
+    const coin = String(req.body?.coin ?? 'USDsui').trim();
+    const walletBalanceSui = Number(req.body?.walletBalanceSui ?? 0);
+
+    if (!title) return res.status(400).json({ error: 'title is required' });
+
+    const cacheKey = `${title}-${coin}-${walletBalanceSui}`;
+    const cached = await getCachedNewsImpact(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const impact = await analyzeNewsImpact(title, coin, walletBalanceSui);
+    await setCachedNewsImpact(cacheKey, impact);
+    res.json(impact);
+  } catch (error) {
+    console.error('News impact error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Impact analysis failed' });
+  }
+});
+
+app.get('/api/forecast/coin/:symbol', async (req, res) => {
+  try {
+    const symbol = req.params.symbol;
+    const cached = await getCachedCoinAnalysis(symbol);
+    if (cached) {
+      return res.json(cached);
+    }
+    const analysis = await analyzeCoin(symbol);
+    await setCachedCoinAnalysis(symbol, analysis);
+    res.json(analysis);
+  } catch (error) {
+    console.error('Coin analysis error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Coin analysis failed' });
+  }
 });
 
 app.post('/api/auth/nonce', (req, res) => {
