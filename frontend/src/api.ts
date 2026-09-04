@@ -186,6 +186,19 @@ export async function fetchDailyForecast(
   return json as DailyForecastResponse;
 }
 
+/**
+ * Live per-coin price, peg deviation and Sui circulating supply (DefiLlama,
+ * via the backend). Use this for stablecoin USD pricing — DeepBook's mainnet
+ * pools price SUI/WUSDT/DEEP against USDC, not USDC/USDsui/FDUSD/BUCK
+ * themselves, so they aren't a usable source for these symbols.
+ */
+export async function fetchStablecoinMarket(): Promise<CoinMarketData[]> {
+  const res = await fetch('/api/market/stablecoins');
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return (json as { market: CoinMarketData[] }).market;
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

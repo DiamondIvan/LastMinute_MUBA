@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useCurrentAccount } from '@mysten/dapp-kit-react';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
-import { getDeepBookPriceFeed } from '../lib/deepbook';
+import { fetchStablecoinMarket } from '../api';
+import type { PegStatus } from '../api';
 
 export interface TokenBalance {
   symbol: string;
@@ -10,7 +11,14 @@ export interface TokenBalance {
   decimals: number;
   balance: number;
   usdPrice: number;
+  /**
+   * Static fallback — there is no live 24h-change source for these coins.
+   * (DefiLlama's stablecoin endpoint is a point-in-time snapshot, not a time
+   * series; DeepBook can't price these coins at all — see usdPrice's comment.)
+   */
   change24h: number;
+  /** Live, when the market fetch succeeds; undefined otherwise. */
+  pegStatus?: PegStatus;
 }
 
 // Known coin type signatures (Testnet package addresses / native coin types).
@@ -73,16 +81,23 @@ export function useStablecoinBalances() {
       const response = await client.listBalances({ owner: account.address });
       const allBalances = response.balances;
 
-      // Real-time prices from the DeepBook V3 on-chain order book.
-      // Replaces the previous hardcoded usdPrice / change24h.
-      let deepBookFeed: Record<string, { price: number; spreadPct: number }> = {};
+      // Live per-coin price + peg status (DefiLlama, via the backend).
+      //
+      // These symbols were previously "overlaid" with DeepBook V3 prices, but
+      // that never actually worked: DeepBook's mainnet pools price
+      // SUI/WUSDT/DEEP against USDC — they have no pool that prices USDC,
+      // USDsui, FDUSD or BUCK themselves (those coins already play the role
+      // of the quote currency in those pools), so the lookup silently missed
+      // every time and this always fell through to the static prices below.
+      // DefiLlama's stablecoin endpoint actually covers these coins.
+      let byMarketSymbol = new Map<string, { price: number; pegStatus: PegStatus }>();
       try {
-        const feed = await getDeepBookPriceFeed();
-        deepBookFeed = Object.fromEntries(
-          Object.entries(feed).map(([sym, p]) => [sym, { price: p.price, spreadPct: p.spreadPct }]),
+        const market = await fetchStablecoinMarket();
+        byMarketSymbol = new Map(
+          market.filter((m) => m.price !== null).map((m) => [m.symbol, { price: m.price as number, pegStatus: m.pegStatus }]),
         );
       } catch (e) {
-        console.warn('DeepBook price feed unavailable; falling back to static prices:', e);
+        console.warn('Stablecoin market fetch unavailable; falling back to static prices:', e);
       }
 
       let sumUsd = 0;
@@ -97,11 +112,8 @@ export function useStablecoinBalances() {
           parsedBalance = Number(found.balance) / Math.pow(10, tokenDef.decimals);
         }
 
-        // Overlay DeepBook price when a feed exists for this symbol; else keep
-        // the static ~$1 stablecoin price as a safe fallback.
-        const deep = deepBookFeed[tokenDef.symbol];
-        const price = deep?.price && deep.price > 0 ? deep.price : tokenDef.usdPrice;
-        const change = deep?.price && deep.price > 0 ? deep.spreadPct : tokenDef.change24h;
+        const live = byMarketSymbol.get(tokenDef.symbol);
+        const price = live?.price ?? tokenDef.usdPrice;
 
         sumUsd += parsedBalance * price;
 
@@ -109,7 +121,7 @@ export function useStablecoinBalances() {
           ...tokenDef,
           balance: parsedBalance,
           usdPrice: price,
-          change24h: change,
+          pegStatus: live?.pegStatus,
         };
       });
 

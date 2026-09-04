@@ -11,7 +11,7 @@ import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
 import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
 import { fetchDailyFeeds, TRACKED_SYMBOLS } from './scraper/cryptoFeeds.js';
-import { fetchSuiStablecoinMarket } from './scraper/marketData.js';
+import { fetchSuiStablecoinMarket, getCachedStablecoinMarket } from './scraper/marketData.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -220,6 +220,24 @@ app.post('/api/reports/register', async (req, res) => {
   });
 
   res.json({ digest, reportObjectId, contentHash, blobId });
+});
+
+/**
+ * Live per-coin price, peg deviation and Sui circulating supply, from
+ * DefiLlama. Used by the frontend's stablecoin balances hook — DeepBook's
+ * mainnet pools price SUI/WUSDT/DEEP against USDC, they have no way to price
+ * USDC/USDsui/FDUSD/BUCK themselves (those coins already play the role of the
+ * quote currency in those pools), so this is a different, correct source for
+ * that question rather than a fix to the DeepBook lookup.
+ */
+app.get('/api/market/stablecoins', async (_req, res) => {
+  try {
+    const market = await getCachedStablecoinMarket();
+    res.json({ market });
+  } catch (error) {
+    console.error('Stablecoin market error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to fetch market data' });
+  }
 });
 
 app.get('/api/forecast/stablecoin-news', async (_req, res) => {

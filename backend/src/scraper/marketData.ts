@@ -116,6 +116,22 @@ export async function fetchSuiStablecoinMarket(): Promise<CoinMarketData[]> {
   }
 }
 
+const CACHE_TTL_MS = 60_000;
+let cached: { at: number; data: CoinMarketData[] } | null = null;
+
+/**
+ * Same data as `fetchSuiStablecoinMarket`, cached in-memory for a minute.
+ * DefiLlama's API is free/unkeyed but there's no reason to refetch on every
+ * wallet-balance refresh — prices don't move meaningfully within a minute for
+ * pegged assets, and this is polite to a public endpoint we don't control.
+ */
+export async function getCachedStablecoinMarket(): Promise<CoinMarketData[]> {
+  if (cached && Date.now() - cached.at < CACHE_TTL_MS) return cached.data;
+  const data = await fetchSuiStablecoinMarket();
+  cached = { at: Date.now(), data };
+  return data;
+}
+
 /** Compact, token-cheap shape for handing to the narration model. */
 export function summariseForAi(market: CoinMarketData[]) {
   return market.map((c) => ({
