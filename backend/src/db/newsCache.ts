@@ -15,6 +15,15 @@ interface DBData {
     timestamp: number;
     data: any;
   }>;
+  /**
+   * Daily forecast snapshot (scraped feeds + DefiLlama market data + narration).
+   * Separate key from `latestForecast` so the two caches never clobber each
+   * other. Optional because older db files on disk predate it.
+   */
+  dailyForecast?: {
+    timestamp: number;
+    data: any;
+  } | null;
 }
 
 // In-memory cache for fast access
@@ -65,6 +74,23 @@ export async function setCachedForecast(data: any): Promise<void> {
     timestamp: Date.now(),
     data
   };
+  await saveDB();
+}
+
+/** ~24h TTL — this drives one scrape + one AI call per day, by design. */
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
+export async function getCachedDailyForecast(): Promise<any | null> {
+  const db = await loadDB();
+  const entry = db.dailyForecast;
+  if (!entry) return null;
+  if (Date.now() - entry.timestamp > ONE_DAY_MS) return null;
+  return entry.data;
+}
+
+export async function setCachedDailyForecast(data: any): Promise<void> {
+  const db = await loadDB();
+  db.dailyForecast = { timestamp: Date.now(), data };
   await saveDB();
 }
 

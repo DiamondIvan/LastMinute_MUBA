@@ -108,6 +108,84 @@ export async function fetchStablecoinAnalysis(): Promise<StablecoinAnalysisRespo
   return json as StablecoinAnalysisResponse;
 }
 
+// ---- daily crypto forecast --------------------------------------------------
+// Scraped feeds + live DefiLlama market data + a Gonka-written narrative.
+// The backend caches one snapshot per day; `coins` only filters the response.
+
+export type PegStatus = 'Optimal' | 'Minor Stress' | 'High Risk' | 'Yield-Bearing';
+
+export interface CoinMarketData {
+  symbol: string;
+  name: string;
+  price: number | null;
+  circulatingUsd: number;
+  pegDeviationBps: number | null;
+  pegStatus: PegStatus;
+  mechanism: string;
+  source: 'defillama' | 'unavailable';
+}
+
+export interface FeedItem {
+  source: string;
+  sourceName: string;
+  title: string;
+  link: string;
+  publishedAt: string | null;
+  coins: string[];
+}
+
+export interface SourceReport {
+  name: string;
+  url: string;
+  mode: 'rss' | 'html';
+  ok: boolean;
+  items: number;
+  note?: string;
+}
+
+export interface CoinNarrative {
+  symbol: string;
+  narrative: string;
+  watchItems: string[];
+}
+
+export interface DailyNarrative {
+  headline: string;
+  outlook: string;
+  perCoin: CoinNarrative[];
+  whatChanged: string[];
+  generatedBy: 'gonka' | 'demo';
+  model?: string;
+}
+
+export interface DailyForecastResponse {
+  date: string;
+  generatedAt: string;
+  market: CoinMarketData[];
+  news: FeedItem[];
+  sources: SourceReport[];
+  usedFallbackNews: boolean;
+  narrative: DailyNarrative;
+  trackedSymbols: string[];
+  wishlist: string[];
+  aiConfigured: boolean;
+}
+
+export async function fetchDailyForecast(
+  coins: string[] = [],
+  refresh = false,
+): Promise<DailyForecastResponse> {
+  const params = new URLSearchParams();
+  if (coins.length > 0) params.set('coins', coins.join(','));
+  if (refresh) params.set('refresh', '1');
+  const qs = params.toString();
+
+  const res = await fetch(`/api/forecast/daily${qs ? `?${qs}` : ''}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return json as DailyForecastResponse;
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

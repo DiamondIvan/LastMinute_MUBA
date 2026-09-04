@@ -3,7 +3,6 @@ import { Topbar } from '../components/Topbar';
 import { KpiCards } from '../components/KpiCards';
 import { StablecoinTracker } from '../components/StablecoinTracker';
 import { StablecoinNewsFeed } from '../components/StablecoinNewsFeed';
-import { ResearchCard } from '../components/ResearchCard';
 import { VerifyPanel } from '../components/VerifyPanel';
 import { useSuiBalance } from '../hooks/useSuiBalance';
 import { useStablecoinBalances } from '../hooks/useStablecoinBalances';
@@ -11,19 +10,14 @@ import { DEMO_REPORT_OBJECT_ID } from '../contracts/constants';
 import { DEMO_REPORT_TEXT } from '../demoReport';
 
 export function DashboardScreen() {
-  const { balance, loading: balanceLoading, refreshBalance } = useSuiBalance();
-  const { tokens, totalStableUsd, refresh: refreshTokens } = useStablecoinBalances();
+  const { balance, loading: balanceLoading } = useSuiBalance();
+  const { tokens, totalStableUsd } = useStablecoinBalances();
 
   const SUI_TESTNET_EST_PRICE = 1.65;
   const totalPortfolioUsd = (
     Number(balance) * SUI_TESTNET_EST_PRICE +
     totalStableUsd
   ).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
-
-  function afterPurchase() {
-    refreshBalance();
-    refreshTokens();
-  }
 
   return (
     <div className="min-h-screen bg-[#F4F7FE] flex p-4 gap-4">
@@ -45,9 +39,6 @@ export function DashboardScreen() {
               <StablecoinNewsFeed />
             </div>
           </div>
-
-          {/* Core flow: ask -> free summary -> buy access on-chain -> unlock the body. */}
-          <ResearchCard reportObjectId={DEMO_REPORT_OBJECT_ID} onPurchased={afterPurchase} />
 
           {/* Browser-side integrity check against the chain. */}
           {DEMO_REPORT_OBJECT_ID && (

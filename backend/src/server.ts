@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { getCachedForecast, setCachedForecast, getCachedNewsImpact, setCachedNewsImpact, getCachedCoinAnalysis, setCachedCoinAnalysis } from './db/newsCache.js';
+import { getCachedForecast, setCachedForecast, getCachedNewsImpact, setCachedNewsImpact, getCachedCoinAnalysis, setCachedCoinAnalysis, getCachedDailyForecast, setCachedDailyForecast } from './db/newsCache.js';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
 import { aiConfigured } from './ai/orClient.js';
@@ -11,6 +11,9 @@ import { registerReport } from './blockchain/registerReport.js';
 import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
 import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
+import { fetchDailyFeeds, TRACKED_SYMBOLS } from './scraper/cryptoFeeds.js';
+import { fetchSuiStablecoinMarket } from './scraper/marketData.js';
+import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 // import { openRouterConfigured } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -63,6 +66,7 @@ app.get('/health', (_req, res) => {
     ok: true,
     network: config.sui.network,
     aiConfigured: aiConfigured(),
+    gonkaConfigured: gonkaConfigured(),
     chainConfigured: chainConfigured(),
     walrusConfigured: true,
     admin: chainConfigured() ? safe(() => adminAddress()) : null,
@@ -258,6 +262,85 @@ app.get('/api/forecast/stablecoin-news', async (_req, res) => {
   } catch (error) {
     console.error('Stablecoin news error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Analysis failed' });
+  }
+});
+
+/**
+ * Daily crypto "weather forecast".
+ *
+ * One scrape + one narration call per day (24h cache), regardless of how many
+ * users or wishlists hit it. The cached snapshot always covers every tracked
+ * coin; the `coins` query param filters the *response*, so changing a wishlist
+ * never triggers a re-scrape.
+ *
+ *   GET /api/forecast/daily                     -> everything
+ *   GET /api/forecast/daily?coins=USDC,BUCK     -> scoped to a wishlist
+ *   GET /api/forecast/daily?refresh=1           -> force a fresh run
+ */
+app.get('/api/forecast/daily', async (req, res) => {
+  try {
+    const requested = String(req.query.coins ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+    // Only symbols we actually track, matched case-insensitively.
+    const coins = requested
+      .map((r) => TRACKED_SYMBOLS.find((s) => s.toLowerCase() === r.toLowerCase()))
+      .filter((s): s is string => Boolean(s));
+
+    const forceRefresh = req.query.refresh === '1' || req.query.refresh === 'true';
+    let snapshot = forceRefresh ? null : await getCachedDailyForecast();
+
+    if (!snapshot) {
+      // Market data and headlines are independent; fetch concurrently.
+      const [market, feeds] = await Promise.all([fetchSuiStablecoinMarket(), fetchDailyFeeds()]);
+
+      // Narrate every tracked coin that has data, so any wishlist can be served
+      // from this one snapshot without another AI call.
+      const narrative = await narrateDailyForecast({
+        market,
+        news: feeds.items,
+        coins: market.map((m) => m.symbol).filter((s) => TRACKED_SYMBOLS.includes(s)),
+      });
+
+      snapshot = {
+        date: new Date().toISOString().slice(0, 10),
+        generatedAt: new Date().toISOString(),
+        market,
+        news: feeds.items,
+        sources: feeds.sources,
+        usedFallbackNews: feeds.usedFallback,
+        narrative,
+      };
+      await setCachedDailyForecast(snapshot);
+    }
+
+    // Scope to the wishlist, when one was supplied.
+    const scoped =
+      coins.length === 0
+        ? snapshot
+        : {
+            ...snapshot,
+            market: snapshot.market.filter((m: any) => coins.includes(m.symbol)),
+            news: snapshot.news.filter(
+              (n: any) => n.coins.length === 0 || n.coins.some((c: string) => coins.includes(c)),
+            ),
+            narrative: {
+              ...snapshot.narrative,
+              perCoin: (snapshot.narrative?.perCoin ?? []).filter((p: any) => coins.includes(p.symbol)),
+            },
+          };
+
+    res.json({
+      ...scoped,
+      trackedSymbols: TRACKED_SYMBOLS,
+      wishlist: coins,
+      aiConfigured: gonkaConfigured(),
+    });
+  } catch (error) {
+    console.error('Daily forecast error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Daily forecast failed' });
   }
 });
 
