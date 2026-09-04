@@ -1,6 +1,6 @@
 {
   "latestForecast": {
-    "timestamp": 1788516049231,
+    "timestamp": 1788534100807,
     "data": {
       "news": [
         {
@@ -62,23 +62,23 @@
       "assetPredictions": [
         {
           "symbol": "USDsui",
-          "predictedGrowth": "+6.08%"
+          "predictedGrowth": "+6.59%"
         },
         {
           "symbol": "USDC",
-          "predictedGrowth": "+7.43%"
+          "predictedGrowth": "+7.48%"
         },
         {
           "symbol": "FDUSD",
-          "predictedGrowth": "+1.09%"
+          "predictedGrowth": "+3.74%"
         },
         {
           "symbol": "BUCK",
-          "predictedGrowth": "+6.52%"
+          "predictedGrowth": "+0.29%"
         },
         {
           "symbol": "USDY",
-          "predictedGrowth": "+2.58%"
+          "predictedGrowth": "+5.29%"
         }
       ]
     }
@@ -615,6 +615,442 @@
             "price": 0.9980450043142934
           }
         ]
+      }
+    },
+    "Building the Internet Financial System: Circle’s Product Vision for 2026-USDsui-0": {
+      "timestamp": 1788534297719,
+      "data": {
+        "marketImpact": "DUMMY DATA: This news signifies a potential 15% increase in cross-chain liquidity for USDsui.",
+        "investorActionPlan": "DUMMY DATA: Based on your balance of 0 SUI, we suggest allocating 10% (0.00 SUI) into USDsui to capture the upside.",
+        "chartData": [
+          {
+            "day": "Day 1",
+            "price": 1
+          },
+          {
+            "day": "Day 5",
+            "price": 1.01
+          },
+          {
+            "day": "Day 10",
+            "price": 1.03
+          },
+          {
+            "day": "Day 20",
+            "price": 1.05
+          },
+          {
+            "day": "Day 30",
+            "price": 1.08
+          }
+        ]
+      }
+    },
+    "Crypto firms urge SEC to speed ETF reviews and allow confidential draft filings-USDsui-0": {
+      "timestamp": 1788535605036,
+      "data": {
+        "marketImpact": "DUMMY DATA: This news signifies a potential 15% increase in cross-chain liquidity for USDsui.",
+        "investorActionPlan": "DUMMY DATA: Based on your balance of 0 SUI, we suggest allocating 10% (0.00 SUI) into USDsui to capture the upside.",
+        "chartData": [
+          {
+            "day": "Day 1",
+            "price": 1
+          },
+          {
+            "day": "Day 5",
+            "price": 1.01
+          },
+          {
+            "day": "Day 10",
+            "price": 1.03
+          },
+          {
+            "day": "Day 20",
+            "price": 1.05
+          },
+          {
+            "day": "Day 30",
+            "price": 1.08
+          }
+        ]
+      }
+    }
+  },
+  "dailyForecast": {
+    "timestamp": 1788535569775,
+    "data": {
+      "date": "2026-09-04",
+      "generatedAt": "2026-09-04T15:26:09.775Z",
+      "market": [
+        {
+          "symbol": "USDC",
+          "name": "USD Coin",
+          "price": 0.999889826320433,
+          "circulatingUsd": 251762908.71675894,
+          "pegDeviationBps": -1,
+          "pegStatus": "Optimal",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "USDsui",
+          "name": "Sui Dollar",
+          "price": 0.999638159206883,
+          "circulatingUsd": 74084345.12851869,
+          "pegDeviationBps": -4,
+          "pegStatus": "Optimal",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "FDUSD",
+          "name": "First Digital USD",
+          "price": 0.9987008361950444,
+          "circulatingUsd": 43526065.66090365,
+          "pegDeviationBps": -13,
+          "pegStatus": "Optimal",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "BUCK",
+          "name": "Bucket Protocol BUCK Stablecoin",
+          "price": 0.9978932472046588,
+          "circulatingUsd": 25915743.014579352,
+          "pegDeviationBps": -21,
+          "pegStatus": "Optimal",
+          "mechanism": "crypto-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "USDY",
+          "name": "Ondo US Dollar Yield",
+          "price": 1.1445647246252575,
+          "circulatingUsd": 14872750.8373253,
+          "pegDeviationBps": null,
+          "pegStatus": "Yield-Bearing",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "suiUSDe",
+          "name": "eSui Dollar",
+          "price": 0.9995245711535727,
+          "circulatingUsd": 13089982.305988584,
+          "pegDeviationBps": -5,
+          "pegStatus": "Optimal",
+          "mechanism": "crypto-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "USDT",
+          "name": "Tether",
+          "price": 0.9999335619624798,
+          "circulatingUsd": 7936435.918067842,
+          "pegDeviationBps": -1,
+          "pegStatus": "Optimal",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        },
+        {
+          "symbol": "AUSD",
+          "name": "Agora Dollar",
+          "price": 1.0000179350537082,
+          "circulatingUsd": 1875134.8001751946,
+          "pegDeviationBps": 0,
+          "pegStatus": "Optimal",
+          "mechanism": "fiat-backed",
+          "source": "defillama"
+        }
+      ],
+      "news": [
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Building the Internet Financial System: Circle’s Product Vision for 2026",
+          "link": "https://www.circle.com/blog/building-the-internet-financial-system-circles-product-vision-for-2026",
+          "publishedAt": null,
+          "coins": [
+            "USDC"
+          ]
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Now Available: USDC, EURC, CCTP, and Bridge Kit on Plasma",
+          "link": "https://www.circle.com/blog",
+          "publishedAt": null,
+          "coins": [
+            "USDC"
+          ]
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Build a Trading Thesis Agent with Arrays and Circle Agent Stack",
+          "link": "https://www.circle.com/blog",
+          "publishedAt": null,
+          "coins": [
+            "USDC"
+          ]
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Treasury never closes: a conversation on USDC, AI, and the end of banking hours",
+          "link": "https://www.circle.com/blog",
+          "publishedAt": null,
+          "coins": [
+            "USDC"
+          ]
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Eco Builds on Circle Gateway to Improve Crosschain Execution",
+          "link": "https://www.circle.com/blog",
+          "publishedAt": null,
+          "coins": [
+            "USDC"
+          ]
+        },
+        {
+          "source": "bloomberg.com",
+          "sourceName": "Bloomberg Crypto",
+          "title": "Stablecoins y cripto en América Latina ayudan al dólar",
+          "link": "https://www.bloomberg.com/news/articles/2026-09-04/stablecoins-y-cripto-en-america-latina-ayudan-al-dolar",
+          "publishedAt": "2026-09-04T14:19:19.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "Crypto firms urge SEC to speed ETF reviews and allow confidential draft filings",
+          "link": "https://www.theblock.co/news/regulation/2026-09-04-crypto-firms-urge-sec-to-speed-etf-reviews-and-allow-confidential-draft-filings-413532",
+          "publishedAt": "2026-09-04T11:21:09.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "Andreessen Horowitz-backed OpenReserve secures preliminary OCC approval for national bank charter",
+          "link": "https://www.theblock.co/news/regulation/2026-09-04-andreessen-horowitz-backed-openreserve-secures-preliminary-occ-approval-for-national-bank-charter-413528",
+          "publishedAt": "2026-09-04T10:18:40.000Z",
+          "coins": []
+        },
+        {
+          "source": "bloomberg.com",
+          "sourceName": "Bloomberg Crypto",
+          "title": "Stablecoins Raise Debasement Trade Paradox in Latin America",
+          "link": "https://www.bloomberg.com/news/newsletters/2026-09-03/stablecoins-raise-debasement-trade-paradox-in-latin-america",
+          "publishedAt": "2026-09-03T21:00:01.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "Coinbase seeks SEC greenlight to list 24/7 equity perpetuals",
+          "link": "https://www.theblock.co/news/regulation/2026-09-03-coinbase-seeks-sec-greenlight-to-list-24-7-equity-perpetuals-413487",
+          "publishedAt": "2026-09-03T20:46:52.000Z",
+          "coins": []
+        },
+        {
+          "source": "bloomberg.com",
+          "sourceName": "Bloomberg Crypto",
+          "title": "Coinbase Files With SEC to Bring Leveraged Stock Bets to US",
+          "link": "https://www.bloomberg.com/news/articles/2026-09-03/coinbase-seeks-sec-nod-for-round-the-clock-leveraged-stock-bets",
+          "publishedAt": "2026-09-03T19:41:18.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "Stablecoin payments infrastructure startup Diameter Pay raises $10 million",
+          "link": "https://www.theblock.co/news/deals/2026-09-03-diameter-pay-funding-stablecoin-payments-infrastructure-413454",
+          "publishedAt": "2026-09-03T16:00:03.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "‘Much ado about nothing’: CFTC files to dismiss CME’s lawsuit over crypto perpetual futures",
+          "link": "https://www.theblock.co/news/regulation/2026-09-02-cftc-dismiss-cme-413416",
+          "publishedAt": "2026-09-03T03:39:02.000Z",
+          "coins": []
+        },
+        {
+          "source": "theblock.co",
+          "sourceName": "The Block",
+          "title": "New Jersey asks Supreme Court to decide who regulates sports betting on prediction markets",
+          "link": "https://www.theblock.co/news/regulation/2026-09-02-new-jersey-asks-supreme-court-to-decide-who-regulates-sports-betting-on-prediction-markets-413398",
+          "publishedAt": "2026-09-02T18:18:28.000Z",
+          "coins": []
+        },
+        {
+          "source": "tether.io",
+          "sourceName": "Tether",
+          "title": "Tether Releases Open-Source AI Translation Models for African and European Languages",
+          "link": "https://tether.io/news/tether-releases-open-source-ai-translation-models-for-african-and-european-languages/",
+          "publishedAt": "2026-09-02T13:00:00.000Z",
+          "coins": []
+        },
+        {
+          "source": "tether.io",
+          "sourceName": "Tether",
+          "title": "Tether Completes the Largest Inaugural Financial Audit in History",
+          "link": "https://tether.io/news/tether-completes-the-largest-inaugural-financial-audit-in-history/",
+          "publishedAt": "2026-08-13T17:08:38.000Z",
+          "coins": []
+        },
+        {
+          "source": "chainalysis.com",
+          "sourceName": "Chainalysis",
+          "title": "Understanding the FATF’s DeFi Report: A Functional Approach to Decentralized Finance Regulation",
+          "link": "https://www.chainalysis.com/blog/understanding-fatf-defi-report-july-2026/",
+          "publishedAt": "2026-08-10T17:09:55.000Z",
+          "coins": []
+        },
+        {
+          "source": "tether.io",
+          "sourceName": "Tether",
+          "title": "Hadron by Tether Launches Strategic Collaboration with First Data and BKN301 to Advance Institutional Tokenization in Saudi Arabia",
+          "link": "https://tether.io/news/hadron-by-tether-launches-strategic-collaboration-with-first-data-and-bkn301-to-advance-institutional-tokenization-in-saudi-arabia/",
+          "publishedAt": "2026-08-06T12:00:00.000Z",
+          "coins": []
+        },
+        {
+          "source": "tether.io",
+          "sourceName": "Tether",
+          "title": "Tether Gold Holdings Rise 9.5% in Q2 as Demand for Tokenized Gold Remains Strong Through Market Volatility",
+          "link": "https://tether.io/news/tether-gold-holdings-rise-9-5-in-q2-as-demand-for-tokenized-gold-remains-strong-through-market-volatility/",
+          "publishedAt": "2026-08-03T15:40:47.000Z",
+          "coins": []
+        },
+        {
+          "source": "tether.io",
+          "sourceName": "Tether",
+          "title": "Tether Posts Strong Q2 Performance, Generates $1.5B Net Operating Profit, Maintains $4.11B Reserve Buffer, and Expands Gold Holdings to More Than 146 Tons",
+          "link": "https://tether.io/news/tether-posts-strong-q2-performance-generates-1-5b-net-operating-profit-maintains-4-11b-reserve-buffer-and-expands-gold-holdings-to-more-than-146-tons/",
+          "publishedAt": "2026-07-31T15:00:00.000Z",
+          "coins": []
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Simplify Stablecoin Adoption With CPN Managed Payments",
+          "link": "https://www.circle.com/blog/simplify-stablecoin-adoption-with-cpn-managed-payments",
+          "publishedAt": null,
+          "coins": []
+        },
+        {
+          "source": "circle.com",
+          "sourceName": "Circle",
+          "title": "Introducing Arc: An Open Layer-1 Blockchain Purpose-Built for Stablecoin Finance",
+          "link": "https://www.circle.com/blog/introducing-arc-an-open-layer-1-blockchain-purpose-built-for-stablecoin-finance",
+          "publishedAt": null,
+          "coins": []
+        }
+      ],
+      "sources": [
+        {
+          "name": "The Block",
+          "url": "https://www.theblock.co/rss.xml",
+          "mode": "rss",
+          "ok": true,
+          "items": 6
+        },
+        {
+          "name": "Chainalysis",
+          "url": "https://www.chainalysis.com/feed/",
+          "mode": "rss",
+          "ok": true,
+          "items": 1
+        },
+        {
+          "name": "Bloomberg Crypto",
+          "url": "https://feeds.bloomberg.com/crypto/news.rss",
+          "mode": "rss",
+          "ok": true,
+          "items": 3
+        },
+        {
+          "name": "Tether",
+          "url": "https://tether.io/feed/",
+          "mode": "rss",
+          "ok": true,
+          "items": 5
+        },
+        {
+          "name": "Circle",
+          "url": "https://www.circle.com/blog",
+          "mode": "html",
+          "ok": true,
+          "items": 7
+        }
+      ],
+      "usedFallbackNews": false,
+      "narrative": {
+        "headline": "Stablecoins on Sui hold steady; USDY trades at a notable premium as a yield-bearing instrument",
+        "outlook": "The six coins covered today show no signs of distress. USDC, USDsui, FDUSD, and AUSD are all within acceptable trading distance of $1. BUCK's slightly wider 21 basis-point discount reflects its crypto-backed design, which is normal for that mechanism. USDY, flagged as yield-bearing, sits well above $1 as intended. Headlines show continued infrastructure development from Circle and Tether rather than any stablecoin-specific threats today.",
+        "perCoin": [
+          {
+            "symbol": "USDC",
+            "narrative": "USDC trades at $0.9999, just 1 basis point below $1. That is negligible — essentially at par. With $251.8 million circulating on Sui, it remains the dominant stablecoin on the chain. Circle's recent updates focus on cross-chain infrastructure and developer tooling, not changes to the token itself.",
+            "watchItems": [
+              "Continued expansion of CCTP and bridge integrations on Sui",
+              "No peg stress reported"
+            ]
+          },
+          {
+            "symbol": "USDsui",
+            "narrative": "USDsui sits at $0.9996, 4 basis points under peg. For a fiat-backed token, this is a tight and normal range. About $74 million is in circulation on Sui, making it the third-largest stablecoin here by supply. No unusual activity flagged today.",
+            "watchItems": [
+              "Supply changes on Sui",
+              "Peg deviation staying within 5 bps"
+            ]
+          },
+          {
+            "symbol": "FDUSD",
+            "narrative": "FDUSD trades at $0.9987, a 13 basis-point discount from $1. This is wider than USDC or USDsui but still within a typical trading range for this token. Roughly $43.5 million circulates on Sui. No news today points to any underlying concern.",
+            "watchItems": [
+              "Whether the discount narrows or widens",
+              "No direct news from issuers today"
+            ]
+          },
+          {
+            "symbol": "BUCK",
+            "narrative": "BUCK is the weakest of the group today at $0.9979, a 21 basis-point discount. As a crypto-backed token, small peg deviations are expected and more common than with fiat-backed coins. About $25.9 million is in circulation on Sui. The peg status is marked optimal, so this discount is within normal parameters.",
+            "watchItems": [
+              "Crypto collateral ratios if reported",
+              "Deviation relative to other crypto-backed peers on Sui"
+            ]
+          },
+          {
+            "symbol": "USDY",
+            "narrative": "USDY is marked 'Yield-Bearing' and trades at $1.1446 — well above $1. This is intentional. Yield-bearing stablecoins accumulate value and are expected to trade above par. Do not interpret this as a depeg; it reflects accrued yield. About $14.9 million is in circulation on Sui.",
+            "watchItems": [
+              "Verify current yield rate with the issuer if you hold this",
+              "Understand redemption terms before assuming the premium"
+            ]
+          },
+          {
+            "symbol": "AUSD",
+            "narrative": "AUSD is perfectly pegged at $1.0000 with zero basis-point deviation — the tightest of any coin today. As a fiat-backed token with $1.88 million in circulation, it is performing as designed. It is also the smallest supply among the covered coins.",
+            "watchItems": [
+              "Circulating supply trend",
+              "Any issuer announcements"
+            ]
+          }
+        ],
+        "whatChanged": [
+          "USDY continues its expected above-peg trajectory as a yield-bearing token",
+          "BUCK shows the widest discount at 21 bps, typical for its crypto-backed mechanism",
+          "AUSD is at exactly $1.0000 today, the only coin with zero deviation",
+          "Circle published multiple developer-focused announcements this week, all related to USDC infrastructure",
+          "No red-flag events for any of the six covered coins"
+        ],
+        "generatedBy": "gonka",
+        "model": "MiniMaxAI/MiniMax-M2.7"
       }
     }
   }
