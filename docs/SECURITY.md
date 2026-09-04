@@ -9,9 +9,15 @@ ones that are weak.
 The Move package is the strongest part: it holds no funds, uses capability-based
 authorisation, and its payment and expiry logic is covered by 17 passing tests.
 
-The one genuine authorisation bypass this review found — the unlock endpoint
-trusting a client-supplied address — has been **fixed** (Finding 1). The
-remaining items are accepted hackathon tradeoffs, each stated with its reason.
+Three genuine defects have been found and fixed: the unlock endpoint trusting a
+client-supplied address (Finding 1), an ungated `mint_report` that allowed
+forging provenance (Finding 2), and a Seal integration that silently broke the
+paid unlock path (Finding 3). The remaining items are accepted hackathon
+tradeoffs, each stated with its reason.
+
+A separate table at the end lists features that **compile but do not function** —
+kiosk royalties, the undeployed `news_kiosk` module, and zkLogin. None are
+security issues; all three are things that must not be claimed to judges.
 
 ## Trust model
 
@@ -67,7 +73,60 @@ Remaining caveat: the session token is an HMAC blob signed with
 `AUTH_SESSION_SECRET`, valid 24h, with no revocation list. Adequate here; a real
 deployment wants short-lived tokens plus refresh.
 
-### 2. No rate limiting on `/api/research` — **Medium**
+### 2. `mint_report` was an ungated public constructor — **High — FIXED**
+
+Added on `frontend2.0`. `news_platform::mint_report` was `public fun` and took
+`creator` and `created_at` as plain arguments, touched no capability, and never
+wrote to `report_registry`.
+
+Any wallet could therefore have minted a `ResearchReport` naming **someone else**
+as creator, with a forged timestamp and a duplicate content hash — forging
+exactly the provenance the product exists to prove. `VerifyPanel` would have
+shown **✓ VERIFIED** against such a report, because it only compares the hash to
+whatever the object says.
+
+It also bypassed `EReportAlreadyExists`, so the one-record-per-content guarantee
+no longer held.
+
+*Fixed:* `mint_report` is now `public(package)`. External callers cannot reach
+it, which leaves `news_kiosk::mint_report_into_kiosk` — gated on `MintCap` — as
+the only way in. `sui move build` clean, 17/17 tests still pass.
+
+Residual: inside that path an admin still supplies `creator` freely. That is
+consistent with the trust model (the admin is trusted to register honestly), but
+it is a weaker guarantee than `register_report`, which derives `creator` from
+`ctx.sender()`.
+
+### 3. Seal encryption is not operational, and the unlock path depended on it — **High — FIXED**
+
+Added on `frontend2.0`. `/api/reports/:hash/unlock` was rewritten to read an
+encrypted blob from Walrus and decrypt it through Seal. Verified by running it:
+
+```
+encryptReportFor(...) -> "No key servers found"
+```
+
+`sealServerConfigs()` returns an empty array unless `SEAL_KEY_SERVER_0/1` are
+set, so encryption throws in `/api/research`, the blob is never written, the
+index stores an empty `blobId`, and unlock answered **503 "blob not stored on
+Walrus yet"**. The paid flow — buy, then read the report — was broken end to end.
+
+Decryption would not have worked either: `decryptReport` passes
+`txBytes = new Uint8Array(0)` (its own comment calls this a placeholder), creates
+a `SessionKey` with no signer, and there is **no `seal_approve*` function in the
+Move package** for the key servers to check.
+
+*Fixed:* unlock now tries Walrus+Seal first and falls back to the stored
+plaintext body, so the flow works whether or not Seal is configured. The
+response carries `source: 'walrus+seal' | 'server'` so it is visible which path
+served. Access is still gated by the on-chain `ResearchAccess` check either way
+— Seal was adding encryption at rest, not the authorisation.
+
+To make Seal real: configure key servers, add a `seal_approve*` entry to the
+Move package that checks `ResearchAccess`/`PremiumPass`, and pass the approving
+transaction bytes to `decrypt`.
+
+### 4. No rate limiting on `/api/research` — **Medium**
 
 Each call runs four Claude calls plus web search. There is no auth, no quota and
 no cost ceiling, so an unauthenticated caller can drain the API budget.
@@ -75,7 +134,7 @@ no cost ceiling, so an unauthenticated caller can drain the API budget.
 Accepted for a local hackathon demo. Do not expose this endpoint publicly
 without a per-address quota behind the auth from Finding 1.
 
-### 3. Admin key sits in plaintext `.env` — **Medium (accepted)**
+### 5. Admin key sits in plaintext `.env` — **Medium (accepted)**
 
 `ADMIN_SECRET_KEY` grants `register_report` and `update_treasury`. It is in
 `backend/.env`, gitignored, testnet-only, and never sent to the frontend.
@@ -84,20 +143,20 @@ Acceptable for a testnet hackathon. Production needs a KMS or signer service.
 Compromise lets an attacker register junk reports and redirect the treasury; it
 does **not** let them touch user funds or existing access objects.
 
-### 4. In-memory state is lost on restart — **Low**
+### 6. In-memory state is lost on restart — **Low**
 
 Report bodies (`reportsByHash`) and auth nonces are plain `Map`s. A restart
 makes previously purchased reports unservable even though the on-chain
 `ResearchAccess` is still valid — the user keeps the asset but we lose the
 content. Walrus is the intended fix: serve from the blob id recorded on-chain.
 
-### 5. Walrus blobs are public — **Low, by design**
+### 7. Walrus blobs are public — **Low, by design**
 
 Anything uploaded is publicly retrievable by blob id. Premium bodies stored
 there are therefore not confidential; the on-chain access object gates *our*
 delivery, not the blob itself. Never upload keys or personal data.
 
-### 6. UpgradeCap is a standing risk — **Low (inherent)**
+### 8. UpgradeCap is a standing risk — **Low (inherent)**
 
 The deployer wallet holds the `UpgradeCap`, so that key can replace the package
 logic. Burning it would make the contract immutable and remove the risk, at the
@@ -204,12 +263,24 @@ a claim that the analysis you are reading is the one that was registered.
 | # | Finding | Severity | Status |
 | --- | --- | --- | --- |
 | 1 | Unlock endpoint trusts a client-supplied address | High | **fixed** — wallet-signature session token |
-| 2 | No rate limit on the AI endpoint | Medium | accepted for local demo |
-| 3 | Admin key in plaintext `.env` | Medium | accepted for testnet |
-| 4 | In-memory report/nonce state | Low | accepted; Walrus is the path out |
-| 5 | Walrus blobs public | Low | by design, documented |
-| 6 | UpgradeCap retained | Low | deliberate, disclosed |
+| 2 | `mint_report` ungated public constructor | High | **fixed** — `public(package)` |
+| 3 | Seal non-operational, unlock depended on it | High | **fixed** — falls back to the stored body |
+| 4 | No rate limit on the AI endpoint | Medium | accepted for local demo |
+| 5 | Admin key in plaintext `.env` | Medium | accepted for testnet |
+| 6 | In-memory report/nonce state | Low | accepted; Walrus is the path out |
+| 7 | Walrus blobs public | Low | by design, documented |
+| 8 | UpgradeCap retained | Low | deliberate, disclosed |
 
-Finding 1 is fixed. Everything remaining is a conscious hackathon tradeoff
-rather than an oversight — Finding 2 (no rate limit on the AI endpoint) is the
+## Features that compile but do not function
+
+Not security findings, but they must not be claimed to judges:
+
+| Feature | Reality |
+| --- | --- |
+| Kiosk royalty resale | `resolvePlatformKiosk()` returns `''` unconditionally, so `buildPurchaseReportViaKioskTx` is never called and purchase always uses the direct PTB. `set_royalty_policy` is an empty placeholder that assigns its arguments to `_`. No royalty is ever configured or paid. |
+| `news_kiosk` module | Compiles, but is **not deployed** — the live package `0x0047c06a…` contains only `news_platform`. Any call to it, or to `mint_report`, fails until the package is republished (which mints a new PackageID and invalidates every recorded object id). |
+| zkLogin / "Continue with Email" | `backend/src/auth/zkLogin.ts` exists; the login button still pops an `alert`. |
+
+Findings 1-3 are fixed. Everything remaining is a conscious hackathon tradeoff
+rather than an oversight — Finding 4 (no rate limit on the AI endpoint) is the
 one to revisit before any public deployment.
