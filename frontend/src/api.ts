@@ -199,6 +199,26 @@ export async function fetchStablecoinMarket(): Promise<CoinMarketData[]> {
   return (json as { market: CoinMarketData[] }).market;
 }
 
+/**
+ * Real daily peg-price history for the stablecoin tracker chart — derived
+ * from DefiLlama's circulating-supply-in-USD-terms data, not fabricated.
+ * Daily resolution only; there is no 24H timeframe because no free intraday
+ * source exists for these coins.
+ */
+export type HistoryTimeframe = '7D' | '30D' | '1Y';
+
+export interface HistoryPoint {
+  time: string;
+  price: number;
+}
+
+export async function fetchStablecoinHistory(): Promise<Record<string, Record<HistoryTimeframe, HistoryPoint[]>>> {
+  const res = await fetch('/api/market/stablecoins/history');
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return (json as { history: Record<string, Record<HistoryTimeframe, HistoryPoint[]>> }).history;
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

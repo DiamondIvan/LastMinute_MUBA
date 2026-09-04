@@ -12,6 +12,7 @@ import { adminAddress } from './blockchain/suiClient.js';
 import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
 import { fetchDailyFeeds, TRACKED_SYMBOLS } from './scraper/cryptoFeeds.js';
 import { fetchSuiStablecoinMarket, getCachedStablecoinMarket } from './scraper/marketData.js';
+import { getCachedStablecoinHistory } from './scraper/stablecoinHistory.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -237,6 +238,21 @@ app.get('/api/market/stablecoins', async (_req, res) => {
   } catch (error) {
     console.error('Stablecoin market error:', error);
     res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to fetch market data' });
+  }
+});
+
+/**
+ * Real daily peg-price history (7D/30D/1Y) for the coins the frontend tracks
+ * with a real wallet coin-type. See stablecoinHistory.ts for the source and
+ * why there is no 24H timeframe (no free intraday data for these coins).
+ */
+app.get('/api/market/stablecoins/history', async (_req, res) => {
+  try {
+    const history = await getCachedStablecoinHistory();
+    res.json({ history });
+  } catch (error) {
+    console.error('Stablecoin history error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to fetch history' });
   }
 });
 
