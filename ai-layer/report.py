@@ -93,8 +93,8 @@ def save_reports(json_report: dict[str, Any], md_report: str, out_dir: str) -> t
     os.makedirs(out_dir, exist_ok=True)
     json_path = os.path.join(out_dir, "risk_report.json")
     md_path = os.path.join(out_dir, "risk_report.md")
-    with open(json_path, "w") as f:
+    with open(json_path, "w", encoding="utf-8") as f:
         json.dump(json_report, f, indent=2, default=str)
-    with open(md_path, "w") as f:
+    with open(md_path, "w", encoding="utf-8") as f:
         f.write(md_report)
     return json_path, md_path
