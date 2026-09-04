@@ -7,18 +7,18 @@ import { ResearchCard } from '../components/ResearchCard';
 import { VerifyPanel } from '../components/VerifyPanel';
 import { useSuiBalance } from '../hooks/useSuiBalance';
 import { useStablecoinBalances } from '../hooks/useStablecoinBalances';
-import { DEMO_REPORT_TEXT } from '../demoReport';
 import { DEMO_REPORT_OBJECT_ID } from '../contracts/constants';
+import { DEMO_REPORT_TEXT } from '../demoReport';
 
 export function DashboardScreen() {
   const { balance, loading: balanceLoading, refreshBalance } = useSuiBalance();
   const { tokens, totalStableUsd, refresh: refreshTokens } = useStablecoinBalances();
 
   const SUI_TESTNET_EST_PRICE = 1.65;
-  const totalPortfolioUsd = (Number(balance) * SUI_TESTNET_EST_PRICE + totalStableUsd).toLocaleString('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  });
+  const totalPortfolioUsd = (
+    Number(balance) * SUI_TESTNET_EST_PRICE +
+    totalStableUsd
+  ).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 
   function afterPurchase() {
     refreshBalance();
@@ -46,8 +46,10 @@ export function DashboardScreen() {
             </div>
           </div>
 
+          {/* Core flow: ask -> free summary -> buy access on-chain -> unlock the body. */}
           <ResearchCard reportObjectId={DEMO_REPORT_OBJECT_ID} onPurchased={afterPurchase} />
 
+          {/* Browser-side integrity check against the chain. */}
           {DEMO_REPORT_OBJECT_ID && (
             <VerifyPanel reportObjectId={DEMO_REPORT_OBJECT_ID} initialText={DEMO_REPORT_TEXT} />
           )}

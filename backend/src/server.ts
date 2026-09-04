@@ -1,14 +1,18 @@
 import express from 'express';
 import cors from 'cors';
+import { getCachedForecast, setCachedForecast, getCachedNewsImpact, setCachedNewsImpact, getCachedCoinAnalysis, setCachedCoinAnalysis } from './db/newsCache.js';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
-import { aiConfigured } from './ai/claude.js';
+import { aiConfigured } from './ai/orClient.js';
 import { sha256Hex } from './util/hash.js';
 import { uploadToWalrus, readFromWalrus } from './walrus/uploadReport.js';
 import { encryptReportFor, decryptReport } from './seal/sealService.js';
 import { registerReport } from './blockchain/registerReport.js';
 import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
+import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
+import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
+// import { openRouterConfigured } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
 import {
   buildSignInMessage,
@@ -68,11 +72,19 @@ app.get('/health', (_req, res) => {
 // Run the AI pipeline. Returns the FREE summary + the content hash.
 // The full report is Seal-encrypted and stored on Walrus (see seal/).
 app.post('/api/research', async (req, res) => {
-  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
-  const report = await generateIntelligenceReport(question);
+  // No 503 without a key: the pipeline degrades to demo data. `/health` shows
+  // `aiConfigured` so the UI can badge it.
+  let report;
+  try {
+    report = await generateIntelligenceReport(question);
+  } catch (err) {
+    const { status, error } = aiErrorResponse(err);
+    console.error('/api/research failed:', err);
+    return res.status(status).json({ error });
+  }
   const contentHash = sha256Hex(report.full);
 
   // Encrypt then push the premium body to Walrus (decentralized, at-rest
@@ -159,7 +171,6 @@ app.post('/api/reports/:contentHash/unlock', async (req, res) => {
 
 // Admin: generate (or accept) a report, encrypt + store on Walrus, anchor on Sui.
 app.post('/api/reports/register', async (req, res) => {
-  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   if (!chainConfigured()) {
     return res
       .status(503)
@@ -168,7 +179,14 @@ app.post('/api/reports/register', async (req, res) => {
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
-  const report = await generateIntelligenceReport(question);
+  let report;
+  try {
+    report = await generateIntelligenceReport(question);
+  } catch (err) {
+    const { status, error } = aiErrorResponse(err);
+    console.error('/api/reports/register failed:', err);
+    return res.status(status).json({ error });
+  }
   const contentHash = sha256Hex(report.full);
 
   // Seal: encrypt the premium body under the admin identity. Only a holder of
@@ -203,6 +221,85 @@ app.post('/api/reports/register', async (req, res) => {
   res.json({ digest, reportObjectId, contentHash, blobId });
 });
 
+app.get('/api/forecast/stablecoin-news', async (_req, res) => {
+  try {
+    const cached = await getCachedForecast();
+    if (cached) {
+      return res.json(cached);
+    }
+
+    // 1. Scrape news
+    const news = await scrapeStablecoinNews();
+
+    if (news.length === 0) {
+       return res.status(500).json({ error: 'Failed to scrape any news data.' });
+    }
+
+    // 2. Analyze with AI (includes importantNewsIndices)
+    const analysis = await analyzeStablecoinNews(news);
+
+    // 3. Asset predictions (Mocking the list of assets for now, or we can just send the ones we care about)
+    const assetsToPredict = [
+      { symbol: 'USDsui' }, { symbol: 'USDC' }, { symbol: 'FDUSD' }, { symbol: 'BUCK' }, { symbol: 'USDY' }
+    ];
+    const assetPredictions = await analyzeAssetPredictions(assetsToPredict);
+
+    // 4. Return combined response
+    const finalData = {
+      news,
+      strategyPlan: analysis.strategyPlan,
+      riskAnalysis: analysis.riskAnalysis,
+      importantNewsIndices: analysis.importantNewsIndices,
+      assetPredictions
+    };
+
+    await setCachedForecast(finalData);
+    res.json(finalData);
+  } catch (error) {
+    console.error('Stablecoin news error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Analysis failed' });
+  }
+});
+
+app.post('/api/forecast/news-impact', async (req, res) => {
+  try {
+    const title = String(req.body?.title ?? '').trim();
+    const coin = String(req.body?.coin ?? 'USDsui').trim();
+    const walletBalanceSui = Number(req.body?.walletBalanceSui ?? 0);
+
+    if (!title) return res.status(400).json({ error: 'title is required' });
+
+    const cacheKey = `${title}-${coin}-${walletBalanceSui}`;
+    const cached = await getCachedNewsImpact(cacheKey);
+    if (cached) {
+      return res.json(cached);
+    }
+
+    const impact = await analyzeNewsImpact(title, coin, walletBalanceSui);
+    await setCachedNewsImpact(cacheKey, impact);
+    res.json(impact);
+  } catch (error) {
+    console.error('News impact error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Impact analysis failed' });
+  }
+});
+
+app.get('/api/forecast/coin/:symbol', async (req, res) => {
+  try {
+    const symbol = req.params.symbol;
+    const cached = await getCachedCoinAnalysis(symbol);
+    if (cached) {
+      return res.json(cached);
+    }
+    const analysis = await analyzeCoin(symbol);
+    await setCachedCoinAnalysis(symbol, analysis);
+    res.json(analysis);
+  } catch (error) {
+    console.error('Coin analysis error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Coin analysis failed' });
+  }
+});
+
 app.post('/api/auth/nonce', (req, res) => {
   const address = String(req.body?.address ?? '').trim();
   if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
@@ -228,6 +325,26 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   console.error(err);
   res.status(500).json({ error: err instanceof Error ? err.message : 'internal error' });
 });
+
+/**
+ * Turns an OpenRouter failure into a status + message the UI can show, instead
+ * of a bare 5xx (or a 502 from the Vite dev proxy) with the cause buried in the
+ * server log.
+ */
+function aiErrorResponse(err: unknown): { status: number; error: string } {
+  const status = (err as { status?: number })?.status;
+  const message = err instanceof Error ? err.message : String(err);
+
+  if (status === 401) return { status: 401, error: 'OpenRouter rejected the API key (401).' };
+  if (status === 402 || /insufficient|credit|quota/i.test(message)) {
+    return { status: 402, error: `OpenRouter: out of credits. ${message}` };
+  }
+  if (status === 404 || /model/i.test(message)) {
+    return { status: 502, error: `OpenRouter did not accept the model. ${message}` };
+  }
+  if (status === 429) return { status: 429, error: `OpenRouter rate limit. ${message}` };
+  return { status: 502, error: `AI pipeline failed: ${message}` };
+}
 
 /** The wallet address proven by the `Authorization: Bearer *** header, if any. */
 function addressFromBearer(req: express.Request): string | null {

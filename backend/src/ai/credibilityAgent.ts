@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { zodOutputFormat } from '@anthropic-ai/sdk/helpers/zod';
-import { anthropic, MODEL } from './claude.js';
+import { chat, parseJson, aiConfigured } from './orClient.js';
 import type { Source } from './types.js';
 
 const Schema = z.object({
@@ -17,29 +16,29 @@ const MIN_CREDIBILITY = 0.35;
 
 /**
  * Scores each source 0..1 for credibility, drops the weak ones, sorts best-first.
- * One structured Claude call.
+ * With no key, passes everything through unranked.
  */
 export async function assessCredibility(sources: Source[]): Promise<Source[]> {
-  if (sources.length === 0) return sources;
+  if (sources.length === 0 || !aiConfigured()) return sources;
 
-  const response = await anthropic.messages.parse({
-    model: MODEL,
-    max_tokens: 8000,
-    system:
-      'Rate each source 0..1 for credibility on this topic: outlet reputation, primary vs. aggregator, ' +
-      'recency, and evident bias. Be strict. Return one assessment per input url.',
-    messages: [
-      {
-        role: 'user',
-        content: JSON.stringify(
-          sources.map((s) => ({ url: s.url, title: s.title, publisher: s.publisher })),
-        ),
-      },
-    ],
-    output_config: { format: zodOutputFormat(Schema) },
+  const system =
+    'Rate each source 0..1 for credibility on this topic: outlet reputation, primary vs. ' +
+    'aggregator, recency, and evident bias. Be strict. Return one assessment per input url. ' +
+    'Respond with a JSON object: { "assessments": [ { "url", "credibility", "reason" } ] }';
+
+  const { text } = await chat({
+    system,
+    user: JSON.stringify(sources.map((s) => ({ url: s.url, title: s.title, publisher: s.publisher }))),
+    json: true,
   });
 
-  const byUrl = new Map((response.parsed_output?.assessments ?? []).map((a) => [a.url, a.credibility]));
+  let byUrl = new Map<string, number>();
+  try {
+    const parsed = Schema.parse(parseJson(text));
+    byUrl = new Map(parsed.assessments.map((a) => [a.url, a.credibility]));
+  } catch {
+    return sources; // model returned something unparseable — don't drop sources
+  }
 
   return sources
     .map((s) => ({ ...s, credibility: byUrl.get(s.url) ?? 0.5 }))
