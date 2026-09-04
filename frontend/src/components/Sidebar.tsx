@@ -47,8 +47,23 @@ export function Sidebar() {
           >
             Transaction
           </NavLink>
-          <a href="#history" className="flex items-center gap-3 px-4 py-3 rounded-2xl font-medium text-sm text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">History</a>
-          <a href="#settings" className="flex items-center gap-3 px-4 py-3 rounded-2xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all">Settings</a>
+          {/* Not built yet — disabled rather than a live-looking link to nowhere. */}
+          <div
+            aria-disabled="true"
+            title="Coming soon"
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl font-medium text-sm text-gray-300 cursor-not-allowed select-none"
+          >
+            History
+            <span className="text-[9px] font-black uppercase bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">Soon</span>
+          </div>
+          <div
+            aria-disabled="true"
+            title="Coming soon"
+            className="flex items-center justify-between gap-3 px-4 py-3 rounded-2xl font-medium text-sm text-gray-300 cursor-not-allowed select-none"
+          >
+            Settings
+            <span className="text-[9px] font-black uppercase bg-gray-100 text-gray-400 px-1.5 py-0.5 rounded">Soon</span>
+          </div>
         </nav>
       </div>
 

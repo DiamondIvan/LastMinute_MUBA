@@ -13,11 +13,13 @@ export function Topbar() {
       </div>
 
       <div className="flex items-center gap-4">
-        <div className="relative hidden md:block">
-          <input 
-            type="text" 
-            placeholder="Search reports or blobs..." 
-            className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl text-sm w-64 focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all"
+        {/* No search backend exists yet — disabled rather than an input that silently does nothing when you type. */}
+        <div className="relative hidden md:block" title="Search coming soon">
+          <input
+            type="text"
+            disabled
+            placeholder="Search coming soon…"
+            className="bg-gray-50 border border-gray-100 px-4 py-2.5 rounded-2xl text-sm w-64 text-gray-400 placeholder-gray-300 cursor-not-allowed"
           />
         </div>
 

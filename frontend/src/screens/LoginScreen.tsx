@@ -40,10 +40,9 @@ export function LoginScreen() {
     }
   }
 
-  const handleEmailSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert(`Email login requested for: ${email}\n(Joining via Enoki zkLogin enabled)`);
-  };
+  // No email/passwordless auth backend exists yet. Kept as a disabled form
+  // rather than removed, since wallet + Google zkLogin above are the two
+  // working sign-in paths — this one just isn't built yet.
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-[#F4F7FE]">
@@ -106,22 +105,24 @@ export function LoginScreen() {
           </div>
         </div>
 
-        <form onSubmit={handleEmailSubmit} className="space-y-4">
+        <div className="space-y-3" title="Coming soon">
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="Enter your email address"
-            className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-brand/50 transition-all"
-            required
+            disabled
+            className="w-full px-4 py-3 rounded-2xl bg-gray-50 border border-gray-100 text-sm text-gray-400 placeholder-gray-300 cursor-not-allowed"
           />
           <button
-            type="submit"
-            className="w-full py-3 rounded-2xl bg-gray-900 hover:bg-black text-white font-medium text-sm transition-all shadow-sm"
+            type="button"
+            disabled
+            className="w-full py-3 rounded-2xl bg-gray-100 text-gray-400 font-medium text-sm cursor-not-allowed flex items-center justify-center gap-2"
           >
             Continue with Email
+            <span className="text-[9px] font-black uppercase bg-gray-200 text-gray-500 px-1.5 py-0.5 rounded">Soon</span>
           </button>
-        </form>
+        </div>
       </div>
     </div>
   );
