@@ -7,13 +7,18 @@ import { buildPurchaseReportTx } from '../contracts/purchaseReport';
 import { useOnChainReport } from '../hooks/useOnChainReport';
 import { SignalsPanel } from '../components/SignalsPanel';
 import { PaperTradingPanel } from '../components/PaperTradingPanel';
+import { ProposalsPanel } from '../components/ProposalsPanel';
 import {
   fetchSignals,
   fetchPaperLedger,
   openPaperPosition,
   closePaperPosition,
+  fetchProposals,
+  approveProposal,
+  rejectProposal,
   type SignalsSnapshot,
   type PaperLedger,
+  type TradeProposal,
 } from '../api';
 
 /**
@@ -112,11 +117,66 @@ export function TransactionScreen() {
     setLedgerError(null);
     try {
       await closePaperPosition(account.address, positionId);
-      await loadLedger();
+      await Promise.all([loadLedger(), loadProposals()]);
     } catch (e) {
       setLedgerError(e instanceof Error ? e.message : 'Failed to close position');
     } finally {
       setLedgerBusy(false);
+    }
+  };
+
+  // --- Trade proposals (approve / reject) ---
+  const [proposals, setProposals] = useState<TradeProposal[]>([]);
+  const [proposalsLoading, setProposalsLoading] = useState(false);
+  const [proposalsError, setProposalsError] = useState<string | null>(null);
+  const [proposalBusyId, setProposalBusyId] = useState<string | null>(null);
+
+  const loadProposals = useCallback(async () => {
+    if (!account?.address) {
+      setProposals([]);
+      return;
+    }
+    setProposalsLoading(true);
+    setProposalsError(null);
+    try {
+      setProposals((await fetchProposals(account.address)).proposals);
+    } catch (e) {
+      setProposalsError(e instanceof Error ? e.message : 'Failed to load suggestions');
+    } finally {
+      setProposalsLoading(false);
+    }
+  }, [account?.address]);
+
+  useEffect(() => {
+    void loadProposals();
+  }, [loadProposals]);
+
+  const handleApprove = async (proposalId: string) => {
+    if (!account?.address) return;
+    setProposalBusyId(proposalId);
+    setProposalsError(null);
+    try {
+      await approveProposal(account.address, proposalId);
+      await Promise.all([loadLedger(), loadProposals()]);
+    } catch (e) {
+      setProposalsError(e instanceof Error ? e.message : 'Failed to approve');
+      await loadProposals();
+    } finally {
+      setProposalBusyId(null);
+    }
+  };
+
+  const handleReject = async (proposalId: string) => {
+    if (!account?.address) return;
+    setProposalBusyId(proposalId);
+    setProposalsError(null);
+    try {
+      await rejectProposal(account.address, proposalId);
+      await loadProposals();
+    } catch (e) {
+      setProposalsError(e instanceof Error ? e.message : 'Failed to reject');
+    } finally {
+      setProposalBusyId(null);
     }
   };
 
@@ -256,22 +316,33 @@ export function TransactionScreen() {
               refreshing={signalsRefreshing}
             />
 
-            {/* Right: simulated portfolio */}
+            {/* Right: suggestions to approve/reject, then the simulated portfolio */}
             {account ? (
-              <PaperTradingPanel
-                ledger={ledger}
-                signals={signals}
-                loading={ledgerLoading}
-                error={ledgerError}
-                busy={ledgerBusy}
-                onOpen={handleOpenPosition}
-                onClose={handleClosePosition}
-              />
+              <div className="flex flex-col gap-6">
+                <ProposalsPanel
+                  proposals={proposals}
+                  loading={proposalsLoading}
+                  error={proposalsError}
+                  busyId={proposalBusyId}
+                  onApprove={handleApprove}
+                  onReject={handleReject}
+                />
+                <PaperTradingPanel
+                  ledger={ledger}
+                  signals={signals}
+                  loading={ledgerLoading}
+                  error={ledgerError}
+                  busy={ledgerBusy}
+                  onOpen={handleOpenPosition}
+                  onClose={handleClosePosition}
+                />
+              </div>
             ) : (
               <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
-                <h3 className="text-lg font-black text-gray-900 mb-1">Paper Portfolio</h3>
+                <h3 className="text-lg font-black text-gray-900 mb-1">Suggested Trades &amp; Portfolio</h3>
                 <p className="text-sm text-gray-500">
-                  Connect a wallet to track simulated positions. Nothing here moves real funds.
+                  Connect a wallet to see AI trade suggestions and track simulated positions. Nothing here
+                  moves real funds.
                 </p>
               </div>
             )}

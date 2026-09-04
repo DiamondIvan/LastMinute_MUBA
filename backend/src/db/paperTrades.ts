@@ -42,6 +42,12 @@ export interface PaperPosition {
 interface DBShape {
   /** wallet address -> that wallet's positions (open and closed). */
   byAddress: Record<string, PaperPosition[]>;
+  /**
+   * wallet address -> proposal ids the user rejected. Proposal ids are stable
+   * per day+symbol+action, so a rejection sticks for the rest of that day
+   * instead of the same suggestion reappearing on every refresh.
+   */
+  rejectedProposals?: Record<string, string[]>;
 }
 
 let memCache: DBShape | null = null;
@@ -94,6 +100,22 @@ export async function openPosition(
   db.byAddress[key] = [...(db.byAddress[key] ?? []), position];
   await saveDB();
   return position;
+}
+
+export async function listRejectedProposals(address: string): Promise<string[]> {
+  const db = await loadDB();
+  return db.rejectedProposals?.[normaliseAddress(address)] ?? [];
+}
+
+export async function rejectProposal(address: string, proposalId: string): Promise<void> {
+  const db = await loadDB();
+  const key = normaliseAddress(address);
+  if (!db.rejectedProposals) db.rejectedProposals = {};
+  const existing = db.rejectedProposals[key] ?? [];
+  if (!existing.includes(proposalId)) {
+    db.rejectedProposals[key] = [...existing, proposalId];
+    await saveDB();
+  }
 }
 
 export async function closePosition(

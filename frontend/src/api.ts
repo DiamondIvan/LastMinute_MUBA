@@ -305,6 +305,50 @@ export async function closePaperPosition(address: string, positionId: string) {
   );
 }
 
+// ---- trade proposals (approve / reject) ------------------------------------
+// Gonka reads the market; deterministic rules on the backend turn that read
+// into a concrete proposed action. Approving executes against the SIMULATED
+// ledger only — nothing on-chain, no funds move.
+
+export interface TradeProposal {
+  id: string;
+  action: 'open' | 'close';
+  symbol: string;
+  notionalUsd?: number;
+  positionId?: string;
+  price: number;
+  signal: SignalKind;
+  /** Gonka's market read — context, not a recommendation. */
+  rationale: string;
+  /** The deterministic rule that produced this proposal. */
+  basis: string;
+}
+
+export interface ProposalsResponse {
+  date: string;
+  simulated: true;
+  generatedBy: 'gonka' | 'demo';
+  proposals: TradeProposal[];
+}
+
+export async function fetchProposals(address: string): Promise<ProposalsResponse> {
+  const res = await fetch(`/api/proposals/${encodeURIComponent(address)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return json as ProposalsResponse;
+}
+
+export async function approveProposal(address: string, proposalId: string) {
+  return post<{ simulated: true; action: 'open' | 'close'; position: PaperPosition }>(
+    `/api/proposals/${encodeURIComponent(address)}/approve`,
+    { proposalId },
+  );
+}
+
+export async function rejectProposal(address: string, proposalId: string) {
+  return post<{ rejected: string }>(`/api/proposals/${encodeURIComponent(address)}/reject`, { proposalId });
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

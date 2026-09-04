@@ -15,7 +15,8 @@ import { fetchSuiStablecoinMarket, getCachedStablecoinMarket } from './scraper/m
 import { getCachedStablecoinHistory } from './scraper/stablecoinHistory.js';
 import { getTradeablePrices, getTradeableHistory, isTradeableSymbol } from './scraper/tradeableAssets.js';
 import { getCachedSignals, signalForSymbol } from './ai/tradingSignals.js';
-import { listPositions, openPosition, closePosition } from './db/paperTrades.js';
+import { listPositions, openPosition, closePosition, listRejectedProposals, rejectProposal } from './db/paperTrades.js';
+import { buildProposals } from './trading/proposals.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -385,6 +386,92 @@ app.post('/api/paper/:address/close', async (req, res) => {
   } catch (error) {
     console.error('Paper close error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to close position' });
+  }
+});
+
+/**
+ * Trade proposals awaiting approve/reject. Derived deterministically from the
+ * current signals + the wallet's open positions — the model reads the market,
+ * the rules in trading/proposals.ts decide the action. Rejected proposals are
+ * filtered out so a dismissed suggestion doesn't reappear on every refresh.
+ */
+app.get('/api/proposals/:address', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const [built, rejected] = await Promise.all([buildProposals(address), listRejectedProposals(address)]);
+    res.json({
+      ...built,
+      simulated: true,
+      proposals: built.proposals.filter((p) => !rejected.includes(p.id)),
+    });
+  } catch (error) {
+    console.error('Proposals error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to build proposals' });
+  }
+});
+
+/** Approving executes the proposal against the SIMULATED ledger only. */
+app.post('/api/proposals/:address/approve', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const proposalId = String(req.body?.proposalId ?? '');
+    if (!proposalId) return res.status(400).json({ error: 'proposalId required' });
+
+    // Rebuild rather than trust a client-supplied action: the proposal must
+    // still be valid against current signals, prices and positions right now.
+    const [{ proposals }, rejected] = await Promise.all([
+      buildProposals(address),
+      listRejectedProposals(address),
+    ]);
+
+    // A rejection has to be authoritative. Without this check the proposal
+    // disappears from the listing but can still be executed by id.
+    if (rejected.includes(proposalId)) {
+      return res.status(409).json({ error: 'proposal was rejected' });
+    }
+
+    const proposal = proposals.find((p) => p.id === proposalId);
+    if (!proposal) {
+      return res.status(409).json({ error: 'proposal is no longer valid — refresh and review again' });
+    }
+
+    if (proposal.action === 'open') {
+      const position = await openPosition(address, {
+        symbol: proposal.symbol as any,
+        notionalUsd: proposal.notionalUsd ?? 0,
+        entryPrice: proposal.price,
+        signalAtEntry: proposal.signal,
+      });
+      return res.json({ simulated: true, action: 'open', position });
+    }
+
+    if (!proposal.positionId) return res.status(409).json({ error: 'nothing to close' });
+    const closed = await closePosition(address, proposal.positionId, proposal.price);
+    if (!closed) return res.status(409).json({ error: 'position could not be closed' });
+    res.json({ simulated: true, action: 'close', position: closed });
+  } catch (error) {
+    console.error('Proposal approve error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to approve proposal' });
+  }
+});
+
+app.post('/api/proposals/:address/reject', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const proposalId = String(req.body?.proposalId ?? '');
+    if (!proposalId) return res.status(400).json({ error: 'proposalId required' });
+
+    await rejectProposal(address, proposalId);
+    res.json({ rejected: proposalId });
+  } catch (error) {
+    console.error('Proposal reject error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to reject proposal' });
   }
 });
 
