@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useCurrentAccount } from '@mysten/dapp-kit-react';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
+import { getDeepBookPriceFeed } from '../lib/deepbook';
 
 export interface TokenBalance {
   symbol: string;
@@ -12,7 +13,7 @@ export interface TokenBalance {
   change24h: number;
 }
 
-// Known coin type signatures (Testnet package addresses / native coin types)
+// Known coin type signatures (Testnet package addresses / native coin types).
 const KNOWN_STABLECOINS: Omit<TokenBalance, 'balance'>[] = [
   {
     symbol: 'USDC',
@@ -25,7 +26,7 @@ const KNOWN_STABLECOINS: Omit<TokenBalance, 'balance'>[] = [
   {
     symbol: 'USDsui',
     name: 'Sui Dollar',
-    coinType: '0x2::sui::SUI_DOLLAR_MOCK', 
+    coinType: '0x2::sui::SUI_DOLLAR_MOCK',
     decimals: 6,
     usdPrice: 1.001,
     change24h: 0.05,
@@ -68,14 +69,26 @@ export function useStablecoinBalances() {
         baseUrl: 'https://fullnode.testnet.sui.io:443',
       });
 
-      // listBalances returns balances directly on the response.
+      // On-chain balances (existing logic — paginated listBalances).
       const response = await client.listBalances({ owner: account.address });
       const allBalances = response.balances;
+
+      // Real-time prices from the DeepBook V3 on-chain order book.
+      // Replaces the previous hardcoded usdPrice / change24h.
+      let deepBookFeed: Record<string, { price: number; spreadPct: number }> = {};
+      try {
+        const feed = await getDeepBookPriceFeed();
+        deepBookFeed = Object.fromEntries(
+          Object.entries(feed).map(([sym, p]) => [sym, { price: p.price, spreadPct: p.spreadPct }]),
+        );
+      } catch (e) {
+        console.warn('DeepBook price feed unavailable; falling back to static prices:', e);
+      }
 
       let sumUsd = 0;
       const updatedTokens: TokenBalance[] = KNOWN_STABLECOINS.map((tokenDef) => {
         const found = allBalances.find(
-          (b: any) => b.coinType.toLowerCase() === tokenDef.coinType.toLowerCase()
+          (b: any) => b.coinType.toLowerCase() === tokenDef.coinType.toLowerCase(),
         );
 
         let parsedBalance = 0;
@@ -84,11 +97,19 @@ export function useStablecoinBalances() {
           parsedBalance = Number(found.balance) / Math.pow(10, tokenDef.decimals);
         }
 
-        sumUsd += parsedBalance * tokenDef.usdPrice;
+        // Overlay DeepBook price when a feed exists for this symbol; else keep
+        // the static ~$1 stablecoin price as a safe fallback.
+        const deep = deepBookFeed[tokenDef.symbol];
+        const price = deep?.price && deep.price > 0 ? deep.price : tokenDef.usdPrice;
+        const change = deep?.price && deep.price > 0 ? deep.spreadPct : tokenDef.change24h;
+
+        sumUsd += parsedBalance * price;
 
         return {
           ...tokenDef,
           balance: parsedBalance,
+          usdPrice: price,
+          change24h: change,
         };
       });
 

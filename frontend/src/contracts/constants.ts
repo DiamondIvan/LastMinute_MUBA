@@ -17,6 +17,8 @@ export const SUBSCRIPTION_PRICE_MIST = 10_000_000; // 0.01 SUI
 
 export const RESEARCH_ACCESS_TYPE = `${PACKAGE_ID}::news_platform::ResearchAccess`;
 export const PREMIUM_PASS_TYPE = `${PACKAGE_ID}::news_platform::PremiumPass`;
+export const RESEARCH_REPORT_TYPE = `${PACKAGE_ID}::news_platform::ResearchReport`;
+export const KIOSK_STATE_TYPE = `${PACKAGE_ID}::news_kiosk::KioskState`;
 
 export function contractsConfigured(): boolean {
   return !PACKAGE_ID.startsWith('0xYOUR') && !CONFIG_ID.startsWith('0xYOUR');

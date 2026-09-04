@@ -35,6 +35,20 @@ export const config = {
     epochs: Number(optional('WALRUS_EPOCHS', '5')),
   },
 
+  // Seal (KMS) — encrypt premium reports; policy-gated decryption.
+  seal: {
+    // Key server object IDs on the current network. Leave empty on testnet to
+    // use the demo/placeholder servers handled by the Seal SDK defaults.
+    keyServer0: process.env.SEAL_KEY_SERVER_0 ?? '',
+    keyServer1: process.env.SEAL_KEY_SERVER_1 ?? '',
+  },
+
+  // Enoki (zkLogin) — social login + gas sponsorship.
+  enoki: {
+    apiKey: process.env.ENOKI_API_KEY ?? '',
+    clientId: process.env.ENOKI_CLIENT_ID ?? '',
+  },
+
   // Read directly by the Anthropic SDK; kept here only for a startup readiness check.
   anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
   authSessionSecret: optional('AUTH_SESSION_SECRET', 'dev-only-change-me'),

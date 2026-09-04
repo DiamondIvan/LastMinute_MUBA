@@ -232,14 +232,25 @@ export function StablecoinTracker({ liveTokens }: StablecoinTrackerProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('7D');
 
   const coins = useMemo(() => {
-    if (!liveTokens || liveTokens.length === 0) return STABLECOINS;
-    return STABLECOINS.map((coin) => {
-      const match = liveTokens.find(
-        (lt) => lt.symbol.toLowerCase() === coin.symbol.toLowerCase()
-      );
-      return match ? { ...coin, balance: match.balance } : coin;
-    });
-  }, [liveTokens]);
+      if (!liveTokens || liveTokens.length === 0) return STABLECOINS;
+      return STABLECOINS.map((coin) => {
+        const match = liveTokens.find(
+          (lt) => lt.symbol.toLowerCase() === coin.symbol.toLowerCase(),
+        );
+        if (!match) return coin;
+        // Overlay the DeepBook-sourced price + change (from useStablecoinBalances).
+        const price = match.usdPrice > 0 ? match.usdPrice : coin.price;
+        return {
+          ...coin,
+          balance: match.balance,
+          price,
+          changePercent: {
+            ...coin.changePercent,
+            '24H': match.change24h,
+          },
+        };
+      });
+    }, [liveTokens]);
 
   const selectedCoin = useMemo(
     () => coins.find((c) => c.symbol === selectedSymbol) || coins[0],

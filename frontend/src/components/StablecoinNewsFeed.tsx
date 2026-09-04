@@ -50,17 +50,19 @@ export function StablecoinNewsFeed() {
   return (
     <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col h-full">
       <div className="flex items-center justify-between pb-4 border-b border-gray-100">
-        <div>
-          <h3 className="text-lg font-bold text-gray-900">Latest News & Alerts</h3>
-          <p className="text-xs text-gray-500">Real-time peg stability & macro updates</p>
-        </div>
-        <button
-          onClick={() => navigate('/forecast')}
-          className="text-xs font-bold text-brand hover:underline flex items-center gap-1 cursor-pointer"
-        >
-          View All &rarr;
-        </button>
-      </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Latest News & Alerts</h3>
+                <p className="text-xs text-gray-500">
+                  On-chain order book &amp; macro updates (via DeepBook V3)
+                </p>
+              </div>
+              <button
+                onClick={() => navigate('/forecast')}
+                className="text-xs font-bold text-brand hover:underline flex items-center gap-1 cursor-pointer"
+              >
+                View All &rarr;
+              </button>
+            </div>
 
       <div className="divide-y divide-gray-50 flex-1 flex flex-col justify-between pt-2">
         {NEWS_ITEMS.map((item) => (

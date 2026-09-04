@@ -1,42 +1,103 @@
+import {
+  WalrusClient,
+  TESTNET_WALRUS_PACKAGE_CONFIG,
+  MAINNET_WALRUS_PACKAGE_CONFIG,
+} from '@mysten/walrus';
+import { suiClient, adminKeypair } from '../blockchain/suiClient.js';
 import { config } from '../config.js';
 
 export interface WalrusUploadResult {
   blobId: string;
+  blobObjectId: string | null;
   raw: unknown;
 }
 
 /**
- * Uploads text to Walrus testnet via the HTTP publisher.
- * PUT {publisher}/v1/blobs?epochs=N  ->  { newlyCreated | alreadyCertified } with blobId.
+ * Lazy singleton Walrus client (decentralized blob store).
  *
- * WARNING: Walrus blobs are PUBLIC. Only store report bodies here, never keys or
- * personal data.
+ * Replaces the old HTTP-publisher calls. The WalrusClient reads/writes blobs
+ * through the on-chain Walrus package (Sui), storing the report body as an
+ * immutable decentralized blob instead of an in-process Map or an HTTP fetch.
+ *
+ * WARNING: Walrus blobs are PUBLIC. Only store non-secret report bodies here.
+ * For premium (paid) reports, combine with Seal encryption (see seal/).
  */
-export async function uploadToWalrus(content: string): Promise<WalrusUploadResult> {
-  const url = `${config.walrus.publisherUrl}/v1/blobs?epochs=${config.walrus.epochs}`;
-  const res = await fetch(url, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'text/plain' },
-    body: content,
-  });
+let _walrus: WalrusClient | null = null;
 
-  if (!res.ok) {
-    throw new Error(`Walrus upload failed: ${res.status} ${await res.text()}`);
+export function walrusClient(): WalrusClient {
+  if (!_walrus) {
+    const packageConfig =
+      config.sui.network === 'mainnet'
+        ? MAINNET_WALRUS_PACKAGE_CONFIG
+        : TESTNET_WALRUS_PACKAGE_CONFIG;
+    _walrus = new WalrusClient({
+      network: config.sui.network === 'mainnet' ? 'mainnet' : 'testnet',
+      packageConfig,
+      suiClient: suiClient as any,
+    });
   }
-
-  const json: any = await res.json();
-  const blobId: string | undefined =
-    json?.newlyCreated?.blobObject?.blobId ?? json?.alreadyCertified?.blobId;
-
-  if (!blobId) {
-    throw new Error(`Walrus upload: could not read blobId from response ${JSON.stringify(json)}`);
-  }
-  return { blobId, raw: json };
+  return _walrus;
 }
 
-/** Reads a blob back from the Walrus aggregator. */
+/**
+ * Uploads text as a decentralized blob to Walrus via the on-chain package.
+ *
+ * Uses the admin keypair as the signer (server-side only). Returns the blobId
+ * which is then anchored on-chain by `register_report`.
+ */
+export async function uploadToWalrus(
+  content: string,
+  opts?: { owner?: string; signer?: ReturnType<typeof adminKeypair> },
+): Promise<WalrusUploadResult> {
+  const client = walrusClient();
+  const signer = opts?.signer ?? adminKeypair();
+  const owner = opts?.owner ?? signer.toSuiAddress();
+
+  // UTF-8 bytes for the blob payload.
+  const blob = new TextEncoder().encode(content);
+
+  const res = await client.writeBlob({
+    blob,
+    owner,
+    epochs: config.walrus.epochs,
+    deletable: false,
+    signer: signer as any, // WalrusClient accepts a Signer; cast keeps types clean
+  });
+
+  return {
+    blobId: res.blobId,
+    blobObjectId: res.blobObject?.id ?? null,
+    raw: res,
+  };
+}
+
+/**
+ * Reads a blob back from Walrus as text (aggregator-backed SDK path).
+ */
 export async function readFromWalrus(blobId: string): Promise<string> {
-  const res = await fetch(`${config.walrus.aggregatorUrl}/v1/blobs/${blobId}`);
-  if (!res.ok) throw new Error(`Walrus read failed: ${res.status}`);
-  return res.text();
+  const client = walrusClient();
+  const res = await client.getBlob({ blobId });
+  return (await res.asFile().text()) ?? '';
+}
+
+/**
+ * Uploads arbitrary bytes (HTML, image) as a blob. Returns the blobId.
+ */
+export async function uploadBytesToWalrus(
+  bytes: Uint8Array,
+  opts?: { owner?: string; signer?: ReturnType<typeof adminKeypair> },
+): Promise<WalrusUploadResult> {
+  const client = walrusClient();
+  const signer = opts?.signer ?? adminKeypair();
+  const owner = opts?.owner ?? signer.toSuiAddress();
+
+  const res = await client.writeBlob({
+    blob: bytes,
+    owner,
+    epochs: config.walrus.epochs,
+    deletable: false,
+    signer: signer as any,
+  });
+
+  return { blobId: res.blobId, blobObjectId: res.blobObject?.id ?? null, raw: res };
 }

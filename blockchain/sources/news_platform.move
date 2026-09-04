@@ -174,6 +174,29 @@ module blockchain::news_platform {
         event::emit(SubscriptionPurchased { user: pass.owner, expires_at: pass.expires_at, amount });
     }
 
+    // ---- mint (used by kiosk/resale) ---------------------------------------
+
+    /// Creates (mints) a new `ResearchReport`. Only callable from an authorized
+    /// context. Returns the report object so the caller can place it (e.g. into
+    /// the Kiosk for royalty-enforced resale).
+    public fun mint_report(
+        title: String,
+        content_hash: String,
+        walrus_blob_id: String,
+        creator: address,
+        created_at: u64,
+        ctx: &mut TxContext,
+    ): ResearchReport {
+        ResearchReport {
+            id: object::new(ctx),
+            title,
+            content_hash,
+            walrus_blob_id,
+            creator,
+            created_at,
+        }
+    }
+
     // ---- reports --------------------------------------------------------------
 
     /// Admin-only: anchor a new report's provenance on-chain. Rejects duplicate hashes.
