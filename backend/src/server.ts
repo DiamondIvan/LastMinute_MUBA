@@ -3,7 +3,6 @@ import cors from 'cors';
 import { getCachedForecast, setCachedForecast, getCachedNewsImpact, setCachedNewsImpact, getCachedCoinAnalysis, setCachedCoinAnalysis, getCachedDailyForecast, setCachedDailyForecast } from './db/newsCache.js';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
-import { aiConfigured } from './ai/orClient.js';
 import { sha256Hex } from './util/hash.js';
 import { uploadToWalrus, readFromWalrus } from './walrus/uploadReport.js';
 import { encryptReportFor, decryptReport } from './seal/sealService.js';
@@ -64,8 +63,7 @@ app.get('/health', (_req, res) => {
   res.json({
     ok: true,
     network: config.sui.network,
-    aiConfigured: aiConfigured(),
-    gonkaConfigured: gonkaConfigured(),
+    aiConfigured: gonkaConfigured(),
     chainConfigured: chainConfigured(),
     walrusConfigured: true,
     admin: chainConfigured() ? safe(() => adminAddress()) : null,
@@ -409,7 +407,7 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
 });
 
 /**
- * Turns an OpenRouter failure into a status + message the UI can show, instead
+ * Turns a Gonka failure into a status + message the UI can show, instead
  * of a bare 5xx (or a 502 from the Vite dev proxy) with the cause buried in the
  * server log.
  */
@@ -417,14 +415,14 @@ function aiErrorResponse(err: unknown): { status: number; error: string } {
   const status = (err as { status?: number })?.status;
   const message = err instanceof Error ? err.message : String(err);
 
-  if (status === 401) return { status: 401, error: 'OpenRouter rejected the API key (401).' };
+  if (status === 401) return { status: 401, error: 'Gonka rejected the API key (401).' };
   if (status === 402 || /insufficient|credit|quota/i.test(message)) {
-    return { status: 402, error: `OpenRouter: out of credits. ${message}` };
+    return { status: 402, error: `Gonka: out of credits. ${message}` };
   }
   if (status === 404 || /model/i.test(message)) {
-    return { status: 502, error: `OpenRouter did not accept the model. ${message}` };
+    return { status: 502, error: `Gonka did not accept the model. ${message}` };
   }
-  if (status === 429) return { status: 429, error: `OpenRouter rate limit. ${message}` };
+  if (status === 429) return { status: 429, error: `Gonka rate limit. ${message}` };
   return { status: 502, error: `AI pipeline failed: ${message}` };
 }
 

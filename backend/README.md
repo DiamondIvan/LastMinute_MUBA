@@ -5,21 +5,22 @@ wallet-signature auth and a live-scraped daily crypto forecast.
 
 ## Status
 
-Two independent AI-backed pipelines, both on OpenAI-wire-compatible providers
-over plain `fetch` (no SDK):
+Every AI call in this backend — the `/api/research` pipeline and the
+`/api/forecast/*` pipeline alike — goes through **Gonka**
+(`GONKA_API_KEY` / `GONKA_BASE_URL` / `GONKA_MODEL` in `src/ai/gonka.ts`,
+OpenAI-wire-compatible over plain `fetch`, no SDK). Gonka is reached through a
+broker/gateway, so the base URL and model id are broker-specific and must be
+set to match yours — model ids are case-sensitive.
 
-- **Research pipeline** (`/api/research`) — targets **OpenRouter**
-  (`OPENROUTER_API_KEY`). Runs a grounded web-search call plus three
-  reasoning calls. Degrades to labelled demo data with no key set.
-- **Forecast pipeline** (`/api/forecast/*`) — targets **Gonka**
-  (`GONKA_API_KEY` / `GONKA_BASE_URL` / `GONKA_MODEL`, all broker-specific —
-  Gonka is accessed through a broker/gateway and model ids are
-  case-sensitive per broker). No hosted web search; it only writes prose over
-  data already scraped/fetched by this backend. Degrades to labelled demo
-  data with no key set.
+Gonka has **no hosted web-search tool**. `/api/research`'s research stage
+used to be web-grounded via OpenRouter; that grounding was dropped when the
+pipeline moved to Gonka (see `src/ai/researchAgent.ts`) — a deliberate,
+accepted tradeoff, not a bug. It now writes from general knowledge and
+attaches no sources, rather than inventing plausible-looking citations.
 
-Every AI call degrades to demo data on **either** a missing key or a failed
-call (bad key, provider error, safety refusal) — never a bare 500.
+Every AI call degrades to clearly-labelled demo data on **either** a missing
+key or a failed call (bad key, provider error, safety refusal) — never a
+bare 500.
 
 ```bash
 cd backend
@@ -35,13 +36,12 @@ src/
 ├── server.ts                Express app + routes
 ├── config.ts                env loading + chainConfigured() guard
 ├── ai/
-│   ├── orClient.ts           OpenRouter client — chat(), parseJson()
-│   ├── researchAgent.ts      OpenRouter + web plugin → briefing + sources
-│   ├── credibilityAgent.ts   structured call → score 0..1, drop weak, sort
+│   ├── gonka.ts               shared Gonka client — gonkaChat(), gonkaChatJson() — every AI call in the backend goes through this
+│   ├── researchAgent.ts      background briefing, no web grounding (Gonka has none) → findings, sources always []
+│   ├── credibilityAgent.ts   structured call → score 0..1, drop weak, sort (mostly a no-op now — sources is usually empty)
 │   ├── analysisAgent.ts      structured call → sentiment / confidence / risk / key points
 │   ├── synthesisAgent.ts     orchestrates the 4-call pipeline → { title, summary, full }
 │   ├── types.ts              IntelligenceReport / Analysis / Source / ResearchResult
-│   ├── gonka.ts               Gonka client — gonkaChat(), gonkaChatJson(), daily narration
 │   └── openrouter.ts          stablecoin news/prediction analysis (despite the filename, runs on Gonka — see file header)
 ├── scraper/
 │   ├── cryptoFeeds.ts         RSS-first daily news collector (forecast tab)
@@ -78,8 +78,7 @@ src/
 
 ## Env (`.env.example`)
 
-`OPENROUTER_API_KEY` powers `/api/research`. `GONKA_API_KEY` +
-`GONKA_BASE_URL` + `GONKA_MODEL` power `/api/forecast/*`'s narration —
+`GONKA_API_KEY` + `GONKA_BASE_URL` + `GONKA_MODEL` power every AI call —
 `GONKA_MODEL` must be copied exactly (case-sensitive) from your broker's
 model catalogue. `ADMIN_SECRET_KEY` is a `suiprivkey1...` string:
 `sui keytool export --key-identity <your-testnet-address>`. Server-side only —
@@ -88,7 +87,7 @@ from `sui client publish`.
 
 ## Report → chain flow
 
-1. `generateIntelligenceReport(question)` — the OpenRouter research pipeline.
+1. `generateIntelligenceReport(question)` — the research pipeline (Gonka, ungrounded).
 2. `sha256Hex(report.full)` → `content_hash`.
 3. `uploadToWalrus(report.full)` → `blobId`. **Walrus blobs are public** — body only.
 4. `registerReport({ title, contentHash, walrusBlobId })` signs with the AdminCap

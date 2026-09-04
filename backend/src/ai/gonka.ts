@@ -4,23 +4,29 @@ import { summariseForAi } from '../scraper/marketData.js';
 import type { FeedItem } from '../scraper/cryptoFeeds.js';
 
 /**
- * Gonka-powered narration for the daily crypto forecast.
+ * Shared Gonka client for every AI call in this backend — the /api/research
+ * pipeline (researchAgent/credibilityAgent/analysisAgent/synthesisAgent) and
+ * the /api/forecast/* pipeline (this file's own narrateDailyForecast, plus
+ * openrouter.ts's four functions) all go through gonkaChat()/gonkaChatJson()
+ * here. There is no other AI provider left in the Node backend.
  *
  * Gonka is an OpenAI-wire-compatible chat-completions provider, so this is a
- * plain `fetch` client — no SDK, same approach as `orClient.ts`.
+ * plain `fetch` client — no SDK.
  *
  * Two things about Gonka drive the design here:
  *
  * 1. **Base URL and model id are broker-specific.** Gonka is accessed through
  *    a broker/gateway, each with its own host and its own (case-sensitive)
  *    model catalogue, so neither can be hardcoded — both are env vars.
- * 2. **It has no hosted web-search tool.** That's fine for this job: the model
- *    never searches, it only writes over data we scraped ourselves and pass in
- *    as context. Grounded-search work must stay on a provider that supports it.
+ * 2. **It has no hosted web-search tool.** researchAgent.ts's grounded search
+ *    was accepted as a loss when this pipeline moved off OpenRouter — every
+ *    call here is a plain reasoning call over context the caller supplies,
+ *    never a live lookup.
  *
- * With `GONKA_API_KEY` unset, every function returns clearly-labelled demo text
- * derived from the real numbers, matching the fallback convention used by
- * `orClient.ts` and `openrouter.ts` so the app runs with no key configured.
+ * With `GONKA_API_KEY` unset, every caller returns clearly-labelled demo data
+ * so the app runs with no key configured. Every caller also falls back on
+ * *failure*, not just absence — a bad key or a Gonka-side error degrades the
+ * same way as no key, never a bare 500.
  */
 
 /** Broker gateway root, including `/v1`. Override per broker. */

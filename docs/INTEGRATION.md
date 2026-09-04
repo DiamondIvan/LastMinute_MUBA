@@ -242,9 +242,11 @@ Base `http://localhost:8787`; Vite proxies `/api` to it in dev.
 | `POST /api/auth/nonce` | `{ address }` | `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` | `{ token }` |
 
-`/api/research` degrades to labelled demo data without `OPENROUTER_API_KEY`
-(never a 503 — every AI call in this backend falls back rather than erroring);
-`/api/reports/register` needs the chain env.
+`/api/research` degrades to labelled demo data without `GONKA_API_KEY`
+(never a 503 — every AI call in this backend falls back rather than erroring).
+Note its research stage is not web-grounded — Gonka has no hosted search tool,
+so it writes from general knowledge and attaches no sources rather than
+inventing citations. `/api/reports/register` needs the chain env.
 
 ### Unlocking requires a wallet signature
 
@@ -271,8 +273,7 @@ cached in `sessionStorage`. `frontend/src/lib/session.ts` wraps this.
 
 | Var | Purpose |
 | --- | --- |
-| `OPENROUTER_API_KEY` | the `/api/research` pipeline (research/credibility/analysis/synthesis) |
-| `GONKA_API_KEY`, `GONKA_BASE_URL`, `GONKA_MODEL` | the `/api/forecast/*` pipeline — broker-specific, see `backend/.env.example` |
+| `GONKA_API_KEY`, `GONKA_BASE_URL`, `GONKA_MODEL` | every AI call in the backend (`/api/research` and `/api/forecast/*`) — broker-specific, see `backend/.env.example` |
 | `PACKAGE_ID`, `CONFIG_ID` | contract addresses |
 | `ADMIN_CAP_ID`, `ADMIN_SECRET_KEY` | admin registration only — **server-side only** |
 | `DEMO_REPORT_OBJECT_ID` | the report the demo purchase flow targets |

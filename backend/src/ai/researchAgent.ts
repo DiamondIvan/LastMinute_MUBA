@@ -1,44 +1,49 @@
-import { chat, aiConfigured } from './orClient.js';
-import type { ResearchResult, Source } from './types.js';
+import { gonkaChat, gonkaConfigured } from './gonka.js';
+import type { ResearchResult } from './types.js';
 
+/**
+ * Gonka has no hosted web-search tool (see gonka.ts's header), so this agent
+ * lost live grounding when the pipeline moved off OpenRouter — a deliberate,
+ * accepted tradeoff. It's a plain reasoning call now: no real citations exist
+ * to return, so `sources` is always empty rather than inventing plausible-
+ * looking ones. The prompt is written to make the model say so rather than
+ * assert specific "current" facts it cannot actually know.
+ */
 const SYSTEM = [
   'You are a financial and crypto news research agent.',
-  'Use the web search results to gather recent, reputable information on the question.',
-  'Then write a tight, factual briefing: what happened, when, who said it, and the numbers.',
-  'Prefer primary sources and major outlets. No hype, no predictions, no investment advice.',
+  'You do NOT have live web access or a search tool. Write from general',
+  'knowledge only.',
+  'Do not invent specific recent events, dates, numbers, quotes, or named',
+  'sources as if they were verified current facts - you cannot know what is',
+  'happening right now. Instead, give grounded background and context on the',
+  'topic, and say plainly that you have no live data for anything time-',
+  'sensitive.',
+  'No hype, no predictions, no investment advice.',
 ].join(' ');
 
 /**
- * Runs a web-grounded search and returns a written briefing plus the sources
- * cited. One OpenRouter call with the `web` plugin.
+ * Writes a background briefing on the question. No sources are attached -
+ * Gonka cannot ground this in real citations, and returning fabricated ones
+ * would be worse than returning none.
  *
- * With no `OPENROUTER_API_KEY`, returns a canned briefing so the rest of the
+ * With no `GONKA_API_KEY`, returns a canned briefing so the rest of the
  * pipeline (and the demo) still works.
  */
 export async function research(question: string): Promise<ResearchResult> {
-  if (!aiConfigured()) return cannedResearch(question);
+  if (!gonkaConfigured()) return cannedResearch(question);
 
-  const { text, citations } = await chat({
+  const text = await gonkaChat({
     system: SYSTEM,
-    user: `Research this question and cite your sources:\n\n${question}`,
-    web: true,
+    user: `Give background and context on this question:\n\n${question}`,
   });
 
-  const seen = new Set<string>();
-  const sources: Source[] = [];
-  for (const c of citations) {
-    if (!c.url || seen.has(c.url)) continue;
-    seen.add(c.url);
-    sources.push({ title: c.title || c.url, url: c.url, publisher: hostOf(c.url), snippet: '' });
-  }
-
-  return { findings: text, sources };
+  return { findings: text, sources: [] };
 }
 
 function cannedResearch(question: string): ResearchResult {
   return {
     findings:
-      `[[demo data - set OPENROUTER_API_KEY for live research]]\n\n` +
+      `[[demo data - set GONKA_API_KEY for live research]]\n\n` +
       `Briefing for: ${question}\n` +
       `- Market conditions are mixed with elevated volatility.\n` +
       `- Institutional flows have been broadly positive over the past week.\n` +
@@ -54,12 +59,4 @@ function cannedResearch(question: string): ResearchResult {
       { title: 'CoinDesk', url: 'https://www.coindesk.com/', publisher: 'coindesk.com', snippet: '' },
     ],
   };
-}
-
-function hostOf(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
 }
