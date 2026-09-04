@@ -1,4 +1,29 @@
 import 'dotenv/config';
+import { gonkaChatJson, gonkaConfigured } from './gonka.js';
+
+/**
+ * Stablecoin news/prediction analysis, powered by Gonka.
+ *
+ * Despite the filename (kept to avoid an unrelated rename touching every
+ * import of this module), nothing here calls OpenRouter any more — all four
+ * functions below went through `gonkaChatJson()` in `gonka.ts` instead, using
+ * the same broker-configurable base URL / model / key as the daily forecast
+ * narration.
+ *
+ * `gonkaConfigured()` only proves GONKA_API_KEY is non-empty, not that it's
+ * valid — so every call below falls back on *failure* too, not just on
+ * absence, exactly like the daily-forecast narration in `gonka.ts`. A bad key
+ * degrading to demo data (rather than throwing into an HTTP 500) is the
+ * behaviour this file was already fixed to have; that stays true here.
+ *
+ * One more failure mode is specific to this model: GonkaRouter's default
+ * (MiniMax-M2.7) sometimes safety-refuses a request — observed live on
+ * analyzeCoin's 30-day-forecast wording — while still returning syntactically
+ * valid JSON, just `{"error": "..."}` instead of the requested schema. That
+ * parses successfully, so checking only "did JSON.parse succeed" let a near-
+ * empty result reach the user. Every function below additionally checks that
+ * its one required field actually has content before accepting the response.
+ */
 
 export interface AIAnalysisResult {
   strategyPlan: string;
@@ -30,20 +55,6 @@ export interface CoinAnalysis {
   pastChart: ChartDataPoint[];
 }
 
-export function openRouterConfigured(): boolean {
-  return Boolean(process.env.OPENROUTER_API_KEY);
-}
-
-/**
- * `openRouterConfigured()` only proves the env var is non-empty — not that the
- * key is valid. A wrong or expired key therefore skips the demo branch, calls
- * the API, gets a 401 and throws, which surfaces as an HTTP 500 and takes the
- * dashboard news feed down. That makes a bad key strictly worse than no key.
- *
- * So every call below also falls back on *failure*, not just on absence. The
- * demo payloads stay prefixed with "DUMMY DATA:" so a degraded response is
- * never mistaken for real analysis.
- */
 function demoStablecoinNews(newsItems: { title: string; source: string }[]): AIAnalysisResult {
   return {
     strategyPlan: "DUMMY DATA: The current market indicates a strong shift towards regulated stablecoins like USDC. Institutional inflows are steady.",
@@ -53,8 +64,8 @@ function demoStablecoinNews(newsItems: { title: string; source: string }[]): AIA
 }
 
 export async function analyzeStablecoinNews(newsItems: { title: string; source: string }[]): Promise<AIAnalysisResult> {
-  if (!openRouterConfigured()) {
-    console.log("No OpenRouter API key found. Returning dummy data for UI testing.");
+  if (!gonkaConfigured()) {
+    console.log("No Gonka API key found. Returning dummy data for UI testing.");
     await new Promise(resolve => setTimeout(resolve, 1500));
     return demoStablecoinNews(newsItems);
   }
@@ -77,35 +88,15 @@ News Headlines:
 ${newsContext}`;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "model": "anthropic/claude-3.5-sonnet",
-        "messages": [{"role": "user", "content": prompt}],
-        "response_format": { "type": "json_object" }
-      })
-    });
-
-    if (!response.ok) throw new Error(`OpenRouter API error: ${response.status}`);
-    const data = await response.json() as any;
-    const content = data.choices[0].message.content;
-    
-    try {
-      const parsed = JSON.parse(content);
-      return {
-        strategyPlan: parsed.strategyPlan || "No strategy plan generated.",
-        riskAnalysis: parsed.riskAnalysis || "No risk analysis generated.",
-        importantNewsIndices: Array.isArray(parsed.importantNewsIndices) ? parsed.importantNewsIndices : []
-      };
-    } catch {
-      return { strategyPlan: "Parse error.", riskAnalysis: "Parse error.", importantNewsIndices: [] };
-    }
+    const parsed = await gonkaChatJson<Partial<AIAnalysisResult>>({ user: prompt });
+    if (!parsed?.strategyPlan) throw new Error('model returned no usable strategyPlan (parse failure or refusal)');
+    return {
+      strategyPlan: parsed.strategyPlan || "No strategy plan generated.",
+      riskAnalysis: parsed.riskAnalysis || "No risk analysis generated.",
+      importantNewsIndices: Array.isArray(parsed.importantNewsIndices) ? parsed.importantNewsIndices : []
+    };
   } catch (error) {
-    console.warn('[openrouter] analyzeStablecoinNews failed, serving demo data:', (error as Error).message);
+    console.warn('[gonka] analyzeStablecoinNews failed, serving demo data:', (error as Error).message);
     return demoStablecoinNews(newsItems);
   }
 }
@@ -125,7 +116,7 @@ function demoNewsImpact(coin: string, walletBalanceSui: number): NewsImpactAnaly
 }
 
 export async function analyzeNewsImpact(newsTitle: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
-  if (!openRouterConfigured()) {
+  if (!gonkaConfigured()) {
     await new Promise(resolve => setTimeout(resolve, 1000));
     return demoNewsImpact(coin, walletBalanceSui);
   }
@@ -148,28 +139,15 @@ Provide exactly valid JSON with:
 }`;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "model": "anthropic/claude-3.5-sonnet",
-        "messages": [{"role": "user", "content": prompt}],
-        "response_format": { "type": "json_object" }
-      })
-    });
-    if (!response.ok) throw new Error(`OpenRouter error ${response.status}`);
-    const data = await response.json() as any;
-    const parsed = JSON.parse(data.choices[0].message.content);
+    const parsed = await gonkaChatJson<Partial<NewsImpactAnalysis>>({ user: prompt });
+    if (!parsed?.marketImpact) throw new Error('model returned no usable marketImpact (parse failure or refusal)');
     return {
       marketImpact: parsed.marketImpact || "",
       investorActionPlan: parsed.investorActionPlan || "",
       chartData: parsed.chartData || []
     };
   } catch (error) {
-    console.warn('[openrouter] analyzeNewsImpact failed, serving demo data:', (error as Error).message);
+    console.warn('[gonka] analyzeNewsImpact failed, serving demo data:', (error as Error).message);
     return demoNewsImpact(coin, walletBalanceSui);
   }
 }
@@ -182,7 +160,7 @@ function demoAssetPredictions(assets: {symbol: string}[]): AssetPrediction[] {
 }
 
 export async function analyzeAssetPredictions(assets: {symbol: string}[]): Promise<AssetPrediction[]> {
-  if (!openRouterConfigured()) {
+  if (!gonkaConfigured()) {
     return demoAssetPredictions(assets);
   }
 
@@ -190,24 +168,11 @@ export async function analyzeAssetPredictions(assets: {symbol: string}[]): Promi
 Return exactly valid JSON: { "predictions": [ { "symbol": "...", "predictedGrowth": "..." } ] }`;
 
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${process.env.OPENROUTER_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({
-        "model": "anthropic/claude-3.5-sonnet",
-        "messages": [{"role": "user", "content": prompt}],
-        "response_format": { "type": "json_object" }
-      })
-    });
-    if (!response.ok) throw new Error(`OpenRouter error ${response.status}`);
-    const data = await response.json() as any;
-    const parsed = JSON.parse(data.choices[0].message.content);
-    return parsed.predictions || assets.map(a => ({ symbol: a.symbol, predictedGrowth: "+0.0%" }));
+    const parsed = await gonkaChatJson<{ predictions?: AssetPrediction[] }>({ user: prompt });
+    if (!parsed?.predictions?.length) throw new Error('model returned no usable predictions (parse failure or refusal)');
+    return parsed.predictions;
   } catch (error) {
-    console.warn('[openrouter] analyzeAssetPredictions failed, serving demo data:', (error as Error).message);
+    console.warn('[gonka] analyzeAssetPredictions failed, serving demo data:', (error as Error).message);
     return demoAssetPredictions(assets);
   }
 }
@@ -229,36 +194,32 @@ function demoCoinAnalysis(symbol: string): CoinAnalysis {
 }
 
 export async function analyzeCoin(symbol: string): Promise<CoinAnalysis> {
-  if (!openRouterConfigured()) {
+  if (!gonkaConfigured()) {
     return demoCoinAnalysis(symbol);
   }
 
-  const prompt = `Analyze the stablecoin ${symbol} based on current market trends. Return a JSON object with:
+  const prompt = `Write an illustrative market-commentary summary for the stablecoin ${symbol},
+for a UI mockup chart. This is not financial advice and not a real prediction —
+it is representative sample data showing typical stablecoin peg behaviour.
+Return a JSON object with:
 - "conclusion": A short overview of the market for this stablecoin.
 - "pegHealth": Assessment of its peg stability.
 - "investmentRisk": Overall risk assessment.
-- "futureChart": Array of 30 objects { day: "Day 1", price: number } representing a 1-month forecast.
-- "pastChart": Array of 30 objects { day: "Day -30", price: number } representing the past month.`;
+- "futureChart": Array of 30 objects { day: "Day 1", price: number } — illustrative 1-month trend line, prices near $1.00.
+- "pastChart": Array of 30 objects { day: "Day -30", price: number } — illustrative past month, prices near $1.00.`;
 
   try {
-    const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3.5-sonnet',
-        messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' }
-      }),
-    });
-    if (!res.ok) throw new Error(`OpenRouter error ${res.status}`);
-    const data = await res.json() as any;
-    const content = data.choices?.[0]?.message?.content || '{}';
-    return JSON.parse(content) as CoinAnalysis;
+    const parsed = await gonkaChatJson<Partial<CoinAnalysis>>({ user: prompt });
+    if (!parsed?.conclusion) throw new Error('model returned no usable conclusion (parse failure or refusal)');
+    return {
+      conclusion: parsed.conclusion ?? '',
+      pegHealth: parsed.pegHealth ?? '',
+      investmentRisk: parsed.investmentRisk ?? '',
+      futureChart: parsed.futureChart ?? [],
+      pastChart: parsed.pastChart ?? [],
+    };
   } catch (error) {
-    console.warn(`[openrouter] analyzeCoin failed for ${symbol}, serving demo data:`, (error as Error).message);
+    console.warn(`[gonka] analyzeCoin failed for ${symbol}, serving demo data:`, (error as Error).message);
     return demoCoinAnalysis(symbol);
   }
 }

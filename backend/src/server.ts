@@ -15,7 +15,6 @@ import { fetchDailyFeeds, TRACKED_SYMBOLS } from './scraper/cryptoFeeds.js';
 import { fetchSuiStablecoinMarket } from './scraper/marketData.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
-// import { openRouterConfigured } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
 import {
   buildSignInMessage,

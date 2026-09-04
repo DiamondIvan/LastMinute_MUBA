@@ -90,9 +90,21 @@ export async function gonkaChat(opts: ChatOpts): Promise<string> {
   return (data.choices?.[0]?.message?.content ?? '').trim();
 }
 
-/** Parse a JSON object out of a model response, tolerating ``` fences. */
+/**
+ * Parse a JSON object out of a model response, tolerating ``` fences and a
+ * reasoning model's inline chain-of-thought.
+ *
+ * MiniMax-M2.7 (GonkaRouter's default model) puts its reasoning directly in
+ * `message.content` as `<think>...</think>` — verified live, the `reasoning`
+ * field it also exposes stays null. The thinking text routinely echoes the
+ * system prompt's JSON schema example back to itself, so a naive
+ * first-`{`-to-last-`}` slice can capture a `{` from inside the schema
+ * quoted mid-reasoning rather than the real answer. Stripping every
+ * `<think>` block first removes that failure mode.
+ */
 function parseJsonLoose<T>(text: string): T | null {
   let s = text.trim();
+  s = s.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
   if (s.startsWith('```')) {
     s = s.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   }
@@ -105,6 +117,12 @@ function parseJsonLoose<T>(text: string): T | null {
   } catch {
     return null;
   }
+}
+
+/** One Gonka chat call, parsed as JSON. Returns null if the response wasn't parseable JSON. */
+export async function gonkaChatJson<T>(opts: ChatOpts): Promise<T | null> {
+  const text = await gonkaChat({ ...opts, json: true });
+  return parseJsonLoose<T>(text);
 }
 
 export interface CoinNarrative {
