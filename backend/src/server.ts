@@ -4,7 +4,8 @@ import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
 import { aiConfigured } from './ai/claude.js';
 import { sha256Hex } from './util/hash.js';
-import { uploadToWalrus } from './walrus/uploadReport.js';
+import { uploadToWalrus, readFromWalrus } from './walrus/uploadReport.js';
+import { encryptReportFor, decryptReport } from './seal/sealService.js';
 import { registerReport } from './blockchain/registerReport.js';
 import { hasResearchAccess } from './blockchain/access.js';
 import { adminAddress } from './blockchain/suiClient.js';
@@ -18,10 +19,32 @@ import type { IntelligenceReport } from './ai/types.js';
 
 const app = express();
 app.use(cors({ origin: config.corsOrigin }));
-app.use(express.json({ limit: '1mb' }));
+app.use(express.json({ limit: '5mb' }));
 
-// Full report bodies, keyed by content hash. Swap for a DB later.
-const reportsByHash = new Map<string, IntelligenceReport>();
+/**
+ * Decentralized report index.
+ *
+ * Keyed by content hash. Keeps only lightweight metadata in memory; the full
+ * premium body lives on Walrus as an immutable, Seal-encrypted blob. This
+ * replaces the old in-process Map<String, IntelligenceReport> (centralized
+ * storage).
+ *
+ * In a full production deployment this metadata map would itself be replaced
+ * by an on-chain registry (the Move `report_registry` already stores the
+ * content_hash -> blob_id mapping).
+ */
+interface ReportIndexEntry {
+  title: string;
+  summary: string;
+  analysis: IntelligenceReport['analysis'];
+  sources: IntelligenceReport['sources'];
+  generatedAt: string;
+  /** Walrus blobId that holds the full (Seal-encrypted) report body. */
+  blobId: string;
+  /** SHA-256 of the plaintext — the on-chain content_hash. */
+  contentHash: string;
+}
+const reportIndex = new Map<string, ReportIndexEntry>();
 
 app.get('/health', (_req, res) => {
   res.json({
@@ -29,11 +52,13 @@ app.get('/health', (_req, res) => {
     network: config.sui.network,
     aiConfigured: aiConfigured(),
     chainConfigured: chainConfigured(),
+    walrusConfigured: true,
     admin: chainConfigured() ? safe(() => adminAddress()) : null,
   });
 });
 
 // Run the AI pipeline. Returns the FREE summary + the content hash.
+// The full report is Seal-encrypted and stored on Walrus (see seal/).
 app.post('/api/research', async (req, res) => {
   if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   const question = String(req.body?.question ?? '').trim();
@@ -41,7 +66,29 @@ app.post('/api/research', async (req, res) => {
 
   const report = await generateIntelligenceReport(question);
   const contentHash = sha256Hex(report.full);
-  reportsByHash.set(contentHash, report);
+
+  // Encrypt then push the premium body to Walrus (decentralized, at-rest
+  // encrypted). Falls back to serving only the free summary if Walrus is down.
+  let blobId: string | undefined;
+  try {
+    const { encryptedObject } = await encryptReportFor(report.full, {
+      ownerAddress: adminAddress(),
+      id: contentHash,
+    });
+    blobId = (await uploadToWalrus(encryptedObject)).blobId;
+  } catch (e) {
+    console.error('Encrypt/Walrus upload failed for /api/research:', e);
+  }
+
+  reportIndex.set(contentHash, {
+    title: report.title,
+    summary: report.summary,
+    analysis: report.analysis,
+    sources: report.sources,
+    generatedAt: report.generatedAt,
+    blobId: blobId ?? '',
+    contentHash,
+  });
 
   res.json({
     title: report.title,
@@ -64,8 +111,6 @@ app.post('/api/research', async (req, res) => {
  * See docs/SECURITY.md, Finding 1.
  */
 app.post('/api/reports/:contentHash/unlock', async (req, res) => {
-  // Authenticate before touching the store, so an anonymous caller cannot probe
-  // which content hashes exist.
   const address = addressFromBearer(req);
   if (!address) {
     return res
@@ -73,8 +118,8 @@ app.post('/api/reports/:contentHash/unlock', async (req, res) => {
       .json({ error: 'sign in first: POST /api/auth/nonce then /api/auth/verify' });
   }
 
-  const report = reportsByHash.get(req.params.contentHash);
-  if (!report) return res.status(404).json({ error: 'unknown report' });
+  const entry = reportIndex.get(req.params.contentHash);
+  if (!entry) return res.status(404).json({ error: 'unknown report' });
 
   if (!config.demoReportObjectId) {
     return res.status(503).json({ error: 'DEMO_REPORT_OBJECT_ID not set' });
@@ -83,27 +128,60 @@ app.post('/api/reports/:contentHash/unlock', async (req, res) => {
   if (!allowed) {
     return res.status(403).json({ error: 'no ResearchAccess for this report' });
   }
-  res.json({ full: report.full });
+
+  if (!entry.blobId) {
+    return res.status(503).json({ error: 'blob not stored on Walrus yet' });
+  }
+
+  // Fetch the encrypted blob from Walrus, then decrypt via Seal. Decryption is
+  // gated on the caller holding the on-chain access object (checked above).
+  const encryptedObject = await readFromWalrus(entry.blobId);
+  const { plaintext } = await decryptReport(encryptedObject, {
+    buyerAddress: address,
+  });
+  res.json({ full: plaintext });
 });
 
-// Admin: generate (or accept) a report, store on Walrus, anchor on Sui.
+// Admin: generate (or accept) a report, encrypt + store on Walrus, anchor on Sui.
 app.post('/api/reports/register', async (req, res) => {
   if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
   if (!chainConfigured()) {
-    return res.status(503).json({ error: 'chain not configured (ADMIN_SECRET_KEY / PACKAGE_ID / CONFIG_ID / ADMIN_CAP_ID)' });
+    return res
+      .status(503)
+      .json({ error: 'chain not configured (ADMIN_SECRET_KEY / PACKAGE_ID / CONFIG_ID / ADMIN_CAP_ID)' });
   }
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
   const report = await generateIntelligenceReport(question);
   const contentHash = sha256Hex(report.full);
-  reportsByHash.set(contentHash, report);
 
-  const { blobId } = await uploadToWalrus(report.full);
+  // Seal: encrypt the premium body under the admin identity. Only a holder of
+  // the on-chain PremiumPass/ResearchAccess can decrypt (policy enforced on
+  // chain). The encrypted blob (not plaintext) goes to Walrus.
+  const { encryptedObject } = await encryptReportFor(report.full, {
+    ownerAddress: adminAddress(),
+    id: contentHash,
+  });
+
+  // Encrypted body -> Walrus blob (decentralized, immutable, encrypted-at-rest).
+  const { blobId } = await uploadToWalrus(encryptedObject);
+
+  // Anchor provenance on Sui: content_hash + walrus_blob_id.
   const { digest, reportObjectId } = await registerReport({
     title: report.title,
     contentHash,
     walrusBlobId: blobId,
+  });
+
+  reportIndex.set(contentHash, {
+    title: report.title,
+    summary: report.summary,
+    analysis: report.analysis,
+    sources: report.sources,
+    generatedAt: report.generatedAt,
+    blobId,
+    contentHash,
   });
 
   res.json({ digest, reportObjectId, contentHash, blobId });
@@ -135,7 +213,7 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   res.status(500).json({ error: err instanceof Error ? err.message : 'internal error' });
 });
 
-/** The wallet address proven by the `Authorization: Bearer <token>` header, if any. */
+/** The wallet address proven by the `Authorization: Bearer *** header, if any. */
 function addressFromBearer(req: express.Request): string | null {
   const header = req.header('authorization') ?? '';
   const match = header.match(/^Bearer\s+(.+)$/i);
@@ -151,5 +229,7 @@ function safe<T>(fn: () => T): T | null {
 }
 
 app.listen(config.port, () => {
-  console.log(`MUBA backend on http://localhost:${config.port}  (network: ${config.sui.network}, chain configured: ${chainConfigured()})`);
+  console.log(
+    `MUBA backend on http://localhost:${config.port}  (network: ${config.sui.network}, chain configured: ${chainConfigured()})`,
+  );
 });

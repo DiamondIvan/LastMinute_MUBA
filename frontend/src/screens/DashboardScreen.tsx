@@ -1,26 +1,28 @@
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 import { KpiCards } from '../components/KpiCards';
-import { GrowthChart } from '../components/GrowthChart';
-import { OnChainAssetsFeed } from '../components/OnChainAssetsFeed';
+import { StablecoinTracker } from '../components/StablecoinTracker';
+import { StablecoinNewsFeed } from '../components/StablecoinNewsFeed';
 import { ResearchCard } from '../components/ResearchCard';
 import { VerifyPanel } from '../components/VerifyPanel';
 import { useSuiBalance } from '../hooks/useSuiBalance';
-import { useResearchAccess } from '../hooks/useResearchAccess';
-import { DEMO_REPORT_OBJECT_ID } from '../contracts/constants';
+import { useStablecoinBalances } from '../hooks/useStablecoinBalances';
 import { DEMO_REPORT_TEXT } from '../demoReport';
+import { DEMO_REPORT_OBJECT_ID } from '../contracts/constants';
 
 export function DashboardScreen() {
   const { balance, loading: balanceLoading, refreshBalance } = useSuiBalance();
-  const {
-    objects: reports,
-    loading: accessLoading,
-    reload: reloadAccess,
-  } = useResearchAccess();
+  const { tokens, totalStableUsd, refresh: refreshTokens } = useStablecoinBalances();
+
+  const SUI_TESTNET_EST_PRICE = 1.65;
+  const totalPortfolioUsd = (Number(balance) * SUI_TESTNET_EST_PRICE + totalStableUsd).toLocaleString('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  });
 
   function afterPurchase() {
-    reloadAccess();
     refreshBalance();
+    refreshTokens();
   }
 
   return (
@@ -32,23 +34,20 @@ export function DashboardScreen() {
           <KpiCards
             balance={balance}
             balanceLoading={balanceLoading}
-            reportCount={reports.length}
-            accessLoading={accessLoading}
+            estimatedUsdValue={totalPortfolioUsd}
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-2">
-              <GrowthChart />
+              <StablecoinTracker liveTokens={tokens} />
             </div>
             <div>
-              <OnChainAssetsFeed reports={reports} />
+              <StablecoinNewsFeed />
             </div>
           </div>
 
-          {/* Ask -> free summary -> buy access on-chain -> unlock the body. */}
           <ResearchCard reportObjectId={DEMO_REPORT_OBJECT_ID} onPurchased={afterPurchase} />
 
-          {/* Browser-side integrity check against the chain. */}
           {DEMO_REPORT_OBJECT_ID && (
             <VerifyPanel reportObjectId={DEMO_REPORT_OBJECT_ID} initialText={DEMO_REPORT_TEXT} />
           )}
