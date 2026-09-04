@@ -242,8 +242,9 @@ Base `http://localhost:8787`; Vite proxies `/api` to it in dev.
 | `POST /api/auth/nonce` | `{ address }` | `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` | `{ token }` |
 
-`/api/research` returns 503 without `ANTHROPIC_API_KEY`; `/api/reports/register`
-also needs the chain env.
+`/api/research` degrades to labelled demo data without `OPENROUTER_API_KEY`
+(never a 503 — every AI call in this backend falls back rather than erroring);
+`/api/reports/register` needs the chain env.
 
 ### Unlocking requires a wallet signature
 

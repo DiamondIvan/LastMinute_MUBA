@@ -49,8 +49,6 @@ export const config = {
     clientId: process.env.ENOKI_CLIENT_ID ?? '',
   },
 
-  // Read directly by the Anthropic SDK; kept here only for a startup readiness check.
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY ?? '',
   authSessionSecret: optional('AUTH_SESSION_SECRET', 'dev-only-change-me'),
 };
 
