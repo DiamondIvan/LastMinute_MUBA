@@ -219,6 +219,92 @@ export async function fetchStablecoinHistory(): Promise<Record<string, Record<Hi
   return (json as { history: Record<string, Record<HistoryTimeframe, HistoryPoint[]>> }).history;
 }
 
+// ---- AI trading signals + paper trading ------------------------------------
+// Signals are descriptive market commentary, never buy/sell direction. Paper
+// trades are SIMULATED — nothing here touches a real balance or the chain —
+// but they're valued against the same live price feed as everything else.
+
+export type SignalKind = 'strengthening' | 'stable' | 'weakening' | 'watch';
+
+export interface AssetSignal {
+  symbol: string;
+  signal: SignalKind;
+  rationale: string;
+  watchItems: string[];
+}
+
+export interface SignalsSnapshot {
+  date: string;
+  generatedAt: string;
+  signals: AssetSignal[];
+  headlineCount: number;
+  generatedBy: 'gonka' | 'demo';
+  model?: string;
+}
+
+export interface PaperPosition {
+  id: string;
+  symbol: string;
+  notionalUsd: number;
+  units: number;
+  entryPrice: number;
+  openedAt: string;
+  signalAtEntry: string | null;
+  closedAt?: string;
+  exitPrice?: number;
+  realisedPnlUsd?: number;
+  currentPrice?: number | null;
+  currentValueUsd?: number | null;
+  unrealisedPnlUsd?: number | null;
+}
+
+export interface PaperLedger {
+  simulated: true;
+  open: PaperPosition[];
+  closed: PaperPosition[];
+  summary: {
+    realisedPnlUsd: number;
+    unrealisedPnlUsd: number;
+    openCount: number;
+    closedCount: number;
+  };
+}
+
+export async function fetchSignals(refresh = false): Promise<SignalsSnapshot> {
+  const res = await fetch(`/api/signals${refresh ? '?refresh=1' : ''}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return json as SignalsSnapshot;
+}
+
+export async function fetchTradeablePrices(): Promise<Record<string, number>> {
+  const res = await fetch('/api/market/tradeable');
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return (json as { prices: Record<string, number> }).prices;
+}
+
+export async function fetchPaperLedger(address: string): Promise<PaperLedger> {
+  const res = await fetch(`/api/paper/${encodeURIComponent(address)}`);
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return json as PaperLedger;
+}
+
+export async function openPaperPosition(address: string, symbol: string, notionalUsd: number) {
+  return post<{ simulated: true; position: PaperPosition }>(
+    `/api/paper/${encodeURIComponent(address)}/open`,
+    { symbol, notionalUsd },
+  );
+}
+
+export async function closePaperPosition(address: string, positionId: string) {
+  return post<{ simulated: true; position: PaperPosition }>(
+    `/api/paper/${encodeURIComponent(address)}/close`,
+    { positionId },
+  );
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

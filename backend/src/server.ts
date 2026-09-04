@@ -13,6 +13,9 @@ import { scrapeStablecoinNews } from './scraper/stablecoinScraper.js';
 import { fetchDailyFeeds, TRACKED_SYMBOLS } from './scraper/cryptoFeeds.js';
 import { fetchSuiStablecoinMarket, getCachedStablecoinMarket } from './scraper/marketData.js';
 import { getCachedStablecoinHistory } from './scraper/stablecoinHistory.js';
+import { getTradeablePrices, getTradeableHistory, isTradeableSymbol } from './scraper/tradeableAssets.js';
+import { getCachedSignals, signalForSymbol } from './ai/tradingSignals.js';
+import { listPositions, openPosition, closePosition } from './db/paperTrades.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -253,6 +256,135 @@ app.get('/api/market/stablecoins/history', async (_req, res) => {
   } catch (error) {
     console.error('Stablecoin history error:', error);
     res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to fetch history' });
+  }
+});
+
+/**
+ * Daily AI market signals (Gonka) for every tradeable asset. Cached 24h and
+ * regenerated off the request path — never blocks a user action, since Gonka
+ * latency ranges from ~2s to well over a minute. `?refresh=1` forces a rerun.
+ */
+app.get('/api/signals', async (req, res) => {
+  try {
+    const forceRefresh = req.query.refresh === '1' || req.query.refresh === 'true';
+    res.json(await getCachedSignals(forceRefresh));
+  } catch (error) {
+    console.error('Signals error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to generate signals' });
+  }
+});
+
+/** Current prices + 30d history for everything the paper ledger can hold. */
+app.get('/api/market/tradeable', async (_req, res) => {
+  try {
+    const [prices, history] = await Promise.all([getTradeablePrices(), getTradeableHistory()]);
+    res.json({ prices, history });
+  } catch (error) {
+    console.error('Tradeable assets error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to fetch prices' });
+  }
+});
+
+/**
+ * Paper-trading ledger. SIMULATED ONLY — nothing here touches a real balance
+ * or the chain. Positions are valued against the same live price feed the rest
+ * of the app uses, so the P&L is real even though the trade isn't.
+ */
+app.get('/api/paper/:address', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const [positions, prices] = await Promise.all([listPositions(address), getTradeablePrices()]);
+
+    const open = positions.filter((p) => !p.closedAt);
+    const closed = positions.filter((p) => p.closedAt);
+
+    const openWithValue = open.map((p) => {
+      const current = prices[p.symbol];
+      const currentValueUsd = current === undefined ? null : p.units * current;
+      return {
+        ...p,
+        currentPrice: current ?? null,
+        currentValueUsd,
+        unrealisedPnlUsd: currentValueUsd === null ? null : currentValueUsd - p.notionalUsd,
+      };
+    });
+
+    const realisedPnlUsd = closed.reduce((sum, p) => sum + (p.realisedPnlUsd ?? 0), 0);
+    const unrealisedPnlUsd = openWithValue.reduce((sum, p) => sum + (p.unrealisedPnlUsd ?? 0), 0);
+
+    res.json({
+      simulated: true,
+      open: openWithValue,
+      closed,
+      summary: { realisedPnlUsd, unrealisedPnlUsd, openCount: open.length, closedCount: closed.length },
+    });
+  } catch (error) {
+    console.error('Paper ledger error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to load ledger' });
+  }
+});
+
+app.post('/api/paper/:address/open', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const symbol = String(req.body?.symbol ?? '');
+    const notionalUsd = Number(req.body?.notionalUsd);
+
+    if (!isTradeableSymbol(symbol)) return res.status(400).json({ error: `not a tradeable symbol: ${symbol}` });
+    if (!Number.isFinite(notionalUsd) || notionalUsd <= 0) {
+      return res.status(400).json({ error: 'notionalUsd must be a positive number' });
+    }
+
+    // Refuse rather than invent an entry price — a position opened at a made-up
+    // price produces P&L that means nothing.
+    const prices = await getTradeablePrices();
+    const entryPrice = prices[symbol];
+    if (entryPrice === undefined) {
+      return res.status(503).json({ error: `no live price available for ${symbol} right now` });
+    }
+
+    const position = await openPosition(address, {
+      symbol,
+      notionalUsd,
+      entryPrice,
+      signalAtEntry: await signalForSymbol(symbol),
+    });
+    res.json({ simulated: true, position });
+  } catch (error) {
+    console.error('Paper open error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to open position' });
+  }
+});
+
+app.post('/api/paper/:address/close', async (req, res) => {
+  try {
+    const address = String(req.params.address ?? '');
+    if (!address.startsWith('0x')) return res.status(400).json({ error: 'valid address required' });
+
+    const positionId = String(req.body?.positionId ?? '');
+    if (!positionId) return res.status(400).json({ error: 'positionId required' });
+
+    const positions = await listPositions(address);
+    const target = positions.find((p) => p.id === positionId);
+    if (!target) return res.status(404).json({ error: 'position not found' });
+    if (target.closedAt) return res.status(409).json({ error: 'position already closed' });
+
+    const prices = await getTradeablePrices();
+    const exitPrice = prices[target.symbol];
+    if (exitPrice === undefined) {
+      return res.status(503).json({ error: `no live price available for ${target.symbol} right now` });
+    }
+
+    const closed = await closePosition(address, positionId, exitPrice);
+    if (!closed) return res.status(409).json({ error: 'could not close position' });
+    res.json({ simulated: true, position: closed });
+  } catch (error) {
+    console.error('Paper close error:', error);
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to close position' });
   }
 });
 

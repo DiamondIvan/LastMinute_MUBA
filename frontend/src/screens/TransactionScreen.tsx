@@ -5,6 +5,16 @@ import { Topbar } from '../components/Topbar';
 import { DEMO_REPORT_OBJECT_ID, REPORT_PRICE_MIST, RESEARCH_ACCESS_TYPE, contractsConfigured } from '../contracts/constants';
 import { buildPurchaseReportTx } from '../contracts/purchaseReport';
 import { useOnChainReport } from '../hooks/useOnChainReport';
+import { SignalsPanel } from '../components/SignalsPanel';
+import { PaperTradingPanel } from '../components/PaperTradingPanel';
+import {
+  fetchSignals,
+  fetchPaperLedger,
+  openPaperPosition,
+  closePaperPosition,
+  type SignalsSnapshot,
+  type PaperLedger,
+} from '../api';
 
 /**
  * A real on-chain purchase — calls news_platform::purchase_report and mints
@@ -32,6 +42,83 @@ export function TransactionScreen() {
   const [isPending, setIsPending] = useState(false);
   const [alreadyOwned, setAlreadyOwned] = useState(false);
   const [checkingAccess, setCheckingAccess] = useState(false);
+
+  // --- AI signals (read from a daily cache; never blocks a user action) ---
+  const [signals, setSignals] = useState<SignalsSnapshot | null>(null);
+  const [signalsLoading, setSignalsLoading] = useState(true);
+  const [signalsRefreshing, setSignalsRefreshing] = useState(false);
+  const [signalsError, setSignalsError] = useState<string | null>(null);
+
+  const loadSignals = useCallback(async (refresh = false) => {
+    refresh ? setSignalsRefreshing(true) : setSignalsLoading(true);
+    setSignalsError(null);
+    try {
+      setSignals(await fetchSignals(refresh));
+    } catch (e) {
+      setSignalsError(e instanceof Error ? e.message : 'Failed to load signals');
+    } finally {
+      setSignalsLoading(false);
+      setSignalsRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadSignals(false);
+  }, [loadSignals]);
+
+  // --- Paper trading ledger (simulated; keyed by wallet address) ---
+  const [ledger, setLedger] = useState<PaperLedger | null>(null);
+  const [ledgerLoading, setLedgerLoading] = useState(false);
+  const [ledgerError, setLedgerError] = useState<string | null>(null);
+  const [ledgerBusy, setLedgerBusy] = useState(false);
+
+  const loadLedger = useCallback(async () => {
+    if (!account?.address) {
+      setLedger(null);
+      return;
+    }
+    setLedgerLoading(true);
+    setLedgerError(null);
+    try {
+      setLedger(await fetchPaperLedger(account.address));
+    } catch (e) {
+      setLedgerError(e instanceof Error ? e.message : 'Failed to load portfolio');
+    } finally {
+      setLedgerLoading(false);
+    }
+  }, [account?.address]);
+
+  useEffect(() => {
+    void loadLedger();
+  }, [loadLedger]);
+
+  const handleOpenPosition = async (symbol: string, notionalUsd: number) => {
+    if (!account?.address) return;
+    setLedgerBusy(true);
+    setLedgerError(null);
+    try {
+      await openPaperPosition(account.address, symbol, notionalUsd);
+      await loadLedger();
+    } catch (e) {
+      setLedgerError(e instanceof Error ? e.message : 'Failed to open position');
+    } finally {
+      setLedgerBusy(false);
+    }
+  };
+
+  const handleClosePosition = async (positionId: string) => {
+    if (!account?.address) return;
+    setLedgerBusy(true);
+    setLedgerError(null);
+    try {
+      await closePaperPosition(account.address, positionId);
+      await loadLedger();
+    } catch (e) {
+      setLedgerError(e instanceof Error ? e.message : 'Failed to close position');
+    } finally {
+      setLedgerBusy(false);
+    }
+  };
 
   const checkAccess = useCallback(async () => {
     if (!account?.address || !DEMO_REPORT_OBJECT_ID) return;
@@ -86,8 +173,10 @@ export function TransactionScreen() {
       <Sidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <Topbar />
-        <main className="flex-1 bg-white rounded-4xl p-8 shadow-sm border border-gray-100 overflow-y-auto flex justify-center items-start pt-16">
-          <div className="w-full max-w-md bg-white border border-gray-100 rounded-3xl p-8 shadow-lg">
+        <main className="flex-1 bg-white rounded-4xl p-8 shadow-sm border border-gray-100 overflow-y-auto">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 items-start">
+            {/* Left: the real on-chain purchase */}
+            <div className="bg-white border border-gray-100 rounded-3xl p-8 shadow-lg">
             <h2 className="text-2xl font-black text-gray-900 mb-2">Purchase Report Access</h2>
             <p className="text-sm text-gray-500 mb-6">
               Calls <code className="text-xs bg-gray-100 px-1.5 py-0.5 rounded">purchase_report</code> on
@@ -155,6 +244,36 @@ export function TransactionScreen() {
               >
                 {isPending ? 'Confirm in Wallet…' : `Purchase — ${priceSui} SUI`}
               </button>
+            )}
+            </div>
+
+            {/* Middle: descriptive AI signals */}
+            <SignalsPanel
+              data={signals}
+              loading={signalsLoading}
+              error={signalsError}
+              onRefresh={() => void loadSignals(true)}
+              refreshing={signalsRefreshing}
+            />
+
+            {/* Right: simulated portfolio */}
+            {account ? (
+              <PaperTradingPanel
+                ledger={ledger}
+                signals={signals}
+                loading={ledgerLoading}
+                error={ledgerError}
+                busy={ledgerBusy}
+                onOpen={handleOpenPosition}
+                onClose={handleClosePosition}
+              />
+            ) : (
+              <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                <h3 className="text-lg font-black text-gray-900 mb-1">Paper Portfolio</h3>
+                <p className="text-sm text-gray-500">
+                  Connect a wallet to track simulated positions. Nothing here moves real funds.
+                </p>
+              </div>
             )}
           </div>
         </main>

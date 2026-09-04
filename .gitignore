@@ -26,6 +26,10 @@ ai-layer/.venv/
 package_summaries/
 src/contracts/generated/
 
+# Paper-trading ledger — per-deployment user state, not source.
+# (Kept separate from data/news_db.json so clearing a cache can't wipe it.)
+data/paper_trades.json
+
 # IDE
 .vscode/
 .idea/
