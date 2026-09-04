@@ -1,13 +1,25 @@
 # backend
 
 Node + Express + TypeScript. AI pipeline → Walrus → Sui `register_report`, plus
-wallet-signature auth.
+wallet-signature auth and a live-scraped daily crypto forecast.
 
-## Status: scaffolded, AI agents implemented
+## Status
 
-The AI agents make **real Claude calls** (`@anthropic-ai/sdk`, model
-`claude-opus-5`, set in `src/ai/claude.ts`). Blockchain + Walrus + auth paths
-use the real SDKs too. Set `ANTHROPIC_API_KEY` in `.env` to use `/api/research`.
+Two independent AI-backed pipelines, both on OpenAI-wire-compatible providers
+over plain `fetch` (no SDK):
+
+- **Research pipeline** (`/api/research`) — targets **OpenRouter**
+  (`OPENROUTER_API_KEY`). Runs a grounded web-search call plus three
+  reasoning calls. Degrades to labelled demo data with no key set.
+- **Forecast pipeline** (`/api/forecast/*`) — targets **Gonka**
+  (`GONKA_API_KEY` / `GONKA_BASE_URL` / `GONKA_MODEL`, all broker-specific —
+  Gonka is accessed through a broker/gateway and model ids are
+  case-sensitive per broker). No hosted web search; it only writes prose over
+  data already scraped/fetched by this backend. Degrades to labelled demo
+  data with no key set.
+
+Every AI call degrades to demo data on **either** a missing key or a failed
+call (bad key, provider error, safety refusal) — never a bare 500.
 
 ```bash
 cd backend
@@ -20,64 +32,63 @@ npm run dev               # http://localhost:8787
 
 ```
 src/
-├── server.ts              Express app + routes
-├── config.ts              env loading + chainConfigured() guard
+├── server.ts                Express app + routes
+├── config.ts                env loading + chainConfigured() guard
 ├── ai/
-│   ├── claude.ts           shared Anthropic client + MODEL constant
-│   ├── types.ts            IntelligenceReport / Analysis / Source / ResearchResult
-│   ├── researchAgent.ts    Claude + web_search server tool → briefing + sources
-│   ├── credibilityAgent.ts structured call → score 0..1, drop weak, sort
-│   ├── analysisAgent.ts    structured call → sentiment / confidence / risk / key points
-│   └── synthesisAgent.ts   orchestrates the 4-call pipeline → { title, summary, full }
+│   ├── orClient.ts           OpenRouter client — chat(), parseJson()
+│   ├── researchAgent.ts      OpenRouter + web plugin → briefing + sources
+│   ├── credibilityAgent.ts   structured call → score 0..1, drop weak, sort
+│   ├── analysisAgent.ts      structured call → sentiment / confidence / risk / key points
+│   ├── synthesisAgent.ts     orchestrates the 4-call pipeline → { title, summary, full }
+│   ├── types.ts              IntelligenceReport / Analysis / Source / ResearchResult
+│   ├── gonka.ts               Gonka client — gonkaChat(), gonkaChatJson(), daily narration
+│   └── openrouter.ts          stablecoin news/prediction analysis (despite the filename, runs on Gonka — see file header)
+├── scraper/
+│   ├── cryptoFeeds.ts         RSS-first daily news collector (forecast tab)
+│   ├── marketData.ts          live peg/price/supply from DefiLlama's API
+│   └── stablecoinScraper.ts   older anchor-scraping fallback (dashboard news widget)
+├── db/newsCache.ts           JSON-file cache (data/news_db.json) — forecast + coin/news-impact TTLs
 ├── blockchain/
-│   ├── suiClient.ts         SuiGrpcClient + admin Ed25519Keypair
-│   ├── registerReport.ts    builds+signs the register_report PTB, returns the new object id
-│   └── access.ts            hasResearchAccess(address, reportId) — read-only ownership check
-├── walrus/uploadReport.ts   HTTP publisher upload / aggregator read
+│   ├── suiClient.ts           SuiGrpcClient + admin Ed25519Keypair
+│   ├── registerReport.ts      builds+signs the register_report PTB, returns the new object id
+│   └── access.ts              hasResearchAccess(address, reportId) — read-only ownership check
+├── walrus/uploadReport.ts    HTTP publisher upload / aggregator read
+├── seal/sealService.ts       Seal encrypt/decrypt (falls back to plaintext — see docs/SECURITY.md)
 ├── auth/
-│   ├── nonces.ts            in-memory nonce store
-│   └── verifySignature.ts   verifyPersonalMessageSignature + HMAC session token
-└── util/hash.ts             sha256 hex (the on-chain content_hash)
+│   ├── nonces.ts               in-memory nonce store
+│   ├── verifySignature.ts      verifyPersonalMessageSignature + HMAC session token
+│   └── zkLogin.ts               zkLogin JWT verification — not yet wired into a route
+└── util/hash.ts               sha256 hex (the on-chain content_hash)
 ```
 
 ## Routes
 
 | Method + path | Purpose |
 | --- | --- |
-| `GET /health` | status, network, whether the chain env is configured |
-| `POST /api/research` | `{ question }` → free summary + `analysis` + `contentHash` + `reportObjectId` (the demo report to buy) |
-| `POST /api/reports/:contentHash/unlock` | `{ address }` → `{ full }` **iff** that wallet owns a `ResearchAccess` for `DEMO_REPORT_OBJECT_ID` (else 403) |
-| `POST /api/reports/register` | admin: generate → Walrus → `register_report` on Sui. Needs the chain env. |
+| `GET /health` | status, network, AI/chain configuration flags |
+| `POST /api/research` | `{ question }` → free summary + `analysis` + `contentHash` + `reportObjectId` |
+| `POST /api/reports/:contentHash/unlock` | Bearer session token → `{ full }` iff that wallet owns a `ResearchAccess` |
+| `POST /api/reports/register` | admin: generate → Walrus → `register_report` on Sui. Needs the chain env |
+| `GET /api/forecast/daily` | live scraped + narrated daily forecast. `?coins=` filters, `?refresh=1` forces a fresh run |
+| `GET /api/forecast/stablecoin-news` | older dashboard news widget — `stablecoinScraper.ts` + Gonka analysis |
+| `POST /api/forecast/news-impact` | `{ title, coin, walletBalanceSui }` → Gonka-written market-impact analysis |
+| `GET /api/forecast/coin/:symbol` | Gonka-written per-coin analysis |
 | `POST /api/auth/nonce` | `{ address }` → `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` → `{ token }` |
 
 ## Env (`.env.example`)
 
-`ANTHROPIC_API_KEY` powers the agents (dotenv loads it; the SDK reads it).
-`ADMIN_SECRET_KEY` is a `suiprivkey1...` string:
+`OPENROUTER_API_KEY` powers `/api/research`. `GONKA_API_KEY` +
+`GONKA_BASE_URL` + `GONKA_MODEL` power `/api/forecast/*`'s narration —
+`GONKA_MODEL` must be copied exactly (case-sensitive) from your broker's
+model catalogue. `ADMIN_SECRET_KEY` is a `suiprivkey1...` string:
 `sui keytool export --key-identity <your-testnet-address>`. Server-side only —
 never in the frontend or git. `PACKAGE_ID` / `CONFIG_ID` / `ADMIN_CAP_ID` come
 from `sui client publish`.
 
-## AI pipeline (`src/ai/`)
-
-`generateIntelligenceReport(question)` runs four Claude calls:
-
-1. **research** — `claude-opus-5` + the `web_search` server tool → a factual
-   briefing plus the sources it cited.
-2. **credibility** — structured call scoring each source 0..1; drops anything
-   below 0.35, sorts best-first.
-3. **analysis** — structured call → `{ sentiment, confidence, risk,
-   keyDevelopments, risks }`, grounded only in the briefing.
-4. **synthesis** — structured call → `{ title, summary, full }`.
-
-Model is set in `src/ai/claude.ts`. ~4 model calls + web search per report
-(tens of seconds). For deterministic RSS sources alongside web search, add a
-fetcher and merge into `research()`.
-
 ## Report → chain flow
 
-1. `generateIntelligenceReport(question)` (the AI pipeline above).
+1. `generateIntelligenceReport(question)` — the OpenRouter research pipeline.
 2. `sha256Hex(report.full)` → `content_hash`.
 3. `uploadToWalrus(report.full)` → `blobId`. **Walrus blobs are public** — body only.
 4. `registerReport({ title, contentHash, walrusBlobId })` signs with the AdminCap
@@ -91,3 +102,6 @@ fetcher and merge into `research()`.
   `effects.changedObjects`).
 - Walrus testnet publisher response keys (`newlyCreated.blobObject.blobId` vs
   `alreadyCertified.blobId`).
+- Gonka broker/model config is env-specific — verify `GONKA_BASE_URL` and
+  `GONKA_MODEL` against your broker's own docs before assuming the defaults
+  in `.env.example` still apply.

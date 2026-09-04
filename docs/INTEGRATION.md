@@ -270,7 +270,8 @@ cached in `sessionStorage`. `frontend/src/lib/session.ts` wraps this.
 
 | Var | Purpose |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | the AI agents |
+| `OPENROUTER_API_KEY` | the `/api/research` pipeline (research/credibility/analysis/synthesis) |
+| `GONKA_API_KEY`, `GONKA_BASE_URL`, `GONKA_MODEL` | the `/api/forecast/*` pipeline — broker-specific, see `backend/.env.example` |
 | `PACKAGE_ID`, `CONFIG_ID` | contract addresses |
 | `ADMIN_CAP_ID`, `ADMIN_SECRET_KEY` | admin registration only — **server-side only** |
 | `DEMO_REPORT_OBJECT_ID` | the report the demo purchase flow targets |
