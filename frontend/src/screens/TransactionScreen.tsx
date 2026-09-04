@@ -4,6 +4,7 @@ import { Transaction } from '@mysten/sui/transactions';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
 import { CONFIG_ID } from '../contracts/constants';
+import { useSuiPrice } from '../hooks/useSuiPrice';
 
 const STABLECOINS = [
   { symbol: 'USDsui', name: 'Sui Dollar', priceUsd: 1.0 },
@@ -22,7 +23,7 @@ export function TransactionScreen() {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
 
-  const suiPriceUsd = 1.65; // Simulated SUI price
+  const { price: suiPriceUsd } = useSuiPrice();
   const estimatedOutput = Number(suiAmount) * suiPriceUsd;
 
   const handleBuy = async () => {

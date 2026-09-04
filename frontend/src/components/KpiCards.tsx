@@ -5,9 +5,6 @@ interface KpiCardsProps {
 }
 
 export function KpiCards({ balance, balanceLoading, estimatedUsdValue = "$0.00" }: KpiCardsProps) {
-  // Demo calculation: Assumes 1 SUI = ~$1.50 USD for visual testing until we add real stablecoin data
-  const displayUsd = estimatedUsdValue !== "$0.00" ? estimatedUsdValue : `$${(Number(balance) * 1.5).toFixed(2)}`;
-
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       {/* SUI Balance Card */}
@@ -19,7 +16,7 @@ export function KpiCards({ balance, balanceLoading, estimatedUsdValue = "$0.00" 
       {/* New: Estimated Total USD Balance */}
       <div className="bg-emerald-50 p-6 rounded-3xl border border-emerald-100">
         <p className="text-emerald-600 text-xs font-semibold uppercase tracking-wider mb-2">Est. Total Balance (USD)</p>
-        <h2 className="text-3xl font-extrabold text-gray-900">{balanceLoading ? '...' : displayUsd}</h2>
+        <h2 className="text-3xl font-extrabold text-gray-900">{balanceLoading ? '...' : estimatedUsdValue}</h2>
       </div>
 
       {/* Agent Status Card */}

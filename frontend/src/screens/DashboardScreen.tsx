@@ -6,16 +6,17 @@ import { StablecoinNewsFeed } from '../components/StablecoinNewsFeed';
 import { VerifyPanel } from '../components/VerifyPanel';
 import { useSuiBalance } from '../hooks/useSuiBalance';
 import { useStablecoinBalances } from '../hooks/useStablecoinBalances';
+import { useSuiPrice } from '../hooks/useSuiPrice';
 import { DEMO_REPORT_OBJECT_ID } from '../contracts/constants';
 import { DEMO_REPORT_TEXT } from '../demoReport';
 
 export function DashboardScreen() {
   const { balance, loading: balanceLoading } = useSuiBalance();
   const { tokens, totalStableUsd } = useStablecoinBalances();
+  const { price: suiPrice } = useSuiPrice();
 
-  const SUI_TESTNET_EST_PRICE = 1.65;
   const totalPortfolioUsd = (
-    Number(balance) * SUI_TESTNET_EST_PRICE +
+    Number(balance) * suiPrice +
     totalStableUsd
   ).toLocaleString('en-US', { style: 'currency', currency: 'USD' });
 

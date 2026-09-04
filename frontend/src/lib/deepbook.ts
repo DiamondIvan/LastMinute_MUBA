@@ -129,7 +129,3 @@ export async function getDeepBookPriceFeed(): Promise<Record<string, DeepBookPri
 
   return feed;
 }
-
-/** Convenience: pool keys on testnet. */
-export const SUI_POOL_KEY = 'SUI_DBUSDC';
-export const USDT_POOL_KEY = 'DBUSDT_DBUSDC';
