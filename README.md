@@ -41,9 +41,39 @@ muba-ai-news/
 │   ├── Move.toml
 │   ├── sources/news_platform.move
 │   └── tests/news_platform_tests.move
-├── frontend/             React app (scaffold with Vite — see frontend/README.md)
-└── backend/              AI + news + Walrus + admin registration
+├── frontend/             React app (Vite + Tailwind + Sui dApp Kit)
+├── backend/              AI research agents + Walrus + admin registration
+└── ai-layer/             Python stablecoin risk pipeline (standalone)
 ```
+
+## `ai-layer/` — Sui stablecoin risk pipeline
+
+A standalone Python pipeline, independent of the Node backend and the contract:
+
+```
+data_sources.py → metrics.py → scoring.py → ai_layer.py → report.py
+(live Sui data)   (sub-scores)  (0-100 + band)  (LLM narrative)  (md + JSON)
+```
+
+**Deterministic first, AI second.** Every risk *number* is computed by
+rule-based logic, so the scores are reproducible and auditable; the model only
+writes the narrative on top. With `--no-ai` it produces a full quantitative
+report and makes no model calls at all.
+
+```bash
+cd ai-layer
+pip install -r requirements.txt
+python main.py --no-ai --out ./reports     # quant only, no API key needed
+python main.py --with-news                 # adds the news agent
+```
+
+Verified working: pulls 8 live Sui stablecoins and ranks them USDC (8.0, LOW)
+through BUCK (45.5, HIGH).
+
+> **Note:** this layer calls **OpenAI** (`openai` in `requirements.txt`,
+> `MODEL = "gpt-5.6"`), while the Node backend in `backend/` uses **Claude**.
+> The `ai-layer` README text refers to Claude; the code does not. Worth
+> reconciling before the pitch so the stack story is consistent.
 
 ## Blockchain — build & test
 

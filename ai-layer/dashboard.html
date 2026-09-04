@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sui Stablecoin Risk Ledger</title>
+<style>
+  :root{
+    --ink:#10151c;
+    --panel:#161d26;
+    --line:#2a3441;
+    --paper:#ece7db;
+    --paper-dim:#a8a99c;
+    --slate:#7c8ca6;
+    --low:#5c9873;
+    --medium:#c99a3b;
+    --high:#c07845;
+    --critical:#af4a4a;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--paper);
+    font-family:Georgia,"Iowan Old Style","Palatino Linotype",serif;
+    line-height:1.5;
+  }
+  .mono{
+    font-family:"SFMono-Regular",Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  .wrap{
+    max-width:960px;
+    margin:0 auto;
+    padding:56px 28px 100px;
+  }
+  header{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    gap:24px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--line);
+  }
+  h1{
+    font-size:2rem;
+    font-weight:400;
+    margin:0 0 6px;
+    letter-spacing:0.2px;
+  }
+  header p{
+    margin:0;
+    color:var(--paper-dim);
+    font-size:0.95rem;
+    max-width:46ch;
+  }
+  .meta{
+    text-align:right;
+    color:var(--paper-dim);
+    font-size:0.8rem;
+  }
+  .meta .chain{
+    color:var(--paper);
+    font-size:0.95rem;
+  }
+
+  section{margin-top:48px;}
+  h2{
+    font-size:1.05rem;
+    font-weight:400;
+    color:var(--paper-dim);
+    margin:0 0 18px;
+    padding-bottom:10px;
+    border-bottom:1px solid var(--line);
+  }
+
+  .row{
+    display:grid;
+    grid-template-columns:96px 1fr 210px 100px;
+    align-items:center;
+    gap:18px;
+    padding:16px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .row:last-child{border-bottom:none;}
+  .sym{
+    font-size:1.05rem;
+  }
+  .sym .name{
+    display:block;
+    font-size:0.78rem;
+    color:var(--paper-dim);
+    margin-top:2px;
+  }
+  .bar-track{
+    height:8px;
+    background:#1d2530;
+    border-radius:2px;
+    overflow:hidden;
+    position:relative;
+  }
+  .bar-fill{height:100%;border-radius:2px;}
+  .row .score-line{
+    display:flex;
+    justify-content:space-between;
+    font-size:0.75rem;
+    color:var(--paper-dim);
+    margin-top:6px;
+  }
+  .band{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.85rem;
+  }
+  .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+  .cap{
+    text-align:right;
+    font-size:0.85rem;
+    color:var(--paper-dim);
+  }
+  .cap b{color:var(--paper);font-weight:400;}
+
+  .alert-box{
+    margin-top:14px;
+    padding:12px 16px;
+    border-left:2px solid var(--critical);
+    background:rgba(175,74,74,0.08);
+    font-size:0.88rem;
+    color:var(--paper);
+  }
+
+  .allocation-list{display:flex;flex-direction:column;gap:12px;}
+  .alloc-row{display:grid;grid-template-columns:110px 1fr 60px;align-items:center;gap:14px;}
+  .alloc-track{height:10px;background:#1d2530;border-radius:2px;overflow:hidden;}
+  .alloc-fill{height:100%;background:var(--slate);}
+
+  .hhi{
+    margin-top:20px;
+    padding:16px 18px;
+    background:var(--panel);
+    border:1px solid var(--line);
+    font-size:0.9rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .hhi .val{font-size:1.4rem;}
+
+  .ai-note{
+    color:var(--paper-dim);
+    font-size:0.85rem;
+    font-style:italic;
+  }
+  .coin-narrative{
+    padding:14px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .coin-narrative:last-child{border-bottom:none;}
+  .coin-narrative .h{font-size:0.95rem;margin-bottom:4px;}
+  .coin-narrative p{margin:0;color:var(--paper-dim);font-size:0.9rem;}
+
+  .load-bar{
+    margin-top:14px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    font-size:0.8rem;
+    color:var(--paper-dim);
+  }
+  .load-bar label{
+    border:1px solid var(--line);
+    padding:6px 12px;
+    cursor:pointer;
+  }
+  .load-bar label:hover{border-color:var(--slate);}
+  input[type=file]{display:none;}
+
+  footer{
+    margin-top:60px;
+    padding-top:20px;
+    border-top:1px solid var(--line);
+    color:var(--paper-dim);
+    font-size:0.78rem;
+  }
+
+  @media(max-width:640px){
+    .row{grid-template-columns:1fr;gap:8px;}
+    .cap{text-align:left;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <h1>Sui Stablecoin Risk Ledger</h1>
+      <p>Quantitative risk scoring for stablecoins circulating on Sui, with an AI narrative layer on top.</p>
+      <div class="load-bar">
+        <label for="file-input">Load risk_report.json</label>
+        <input type="file" id="file-input" accept=".json">
+        <span id="load-status">showing sample data</span>
+      </div>
+    </div>
+    <div class="meta">
+      <div class="chain mono" id="chain-name">Sui</div>
+      <div id="generated-at">—</div>
+    </div>
+  </header>
+
+  <section>
+    <h2>Risk-ranked stablecoins</h2>
+    <div id="coin-rows"></div>
+    <div id="alert-container"></div>
+  </section>
+
+  <section id="portfolio-section" style="display:none;">
+    <h2>Proposed portfolio</h2>
+    <div class="allocation-list" id="allocation-list"></div>
+    <div class="hhi">
+      <span>Concentration (HHI)</span>
+      <span class="val mono" id="hhi-val">—</span>
+      <span id="hhi-label" class="ai-note">—</span>
+    </div>
+    <div id="violations"></div>
+  </section>
+
+  <section id="ai-section" style="display:none;">
+    <h2>AI risk narrative</h2>
+    <div id="ai-coins"></div>
+    <div id="ai-portfolio" style="margin-top:16px;"></div>
+    <div id="ai-actions" style="margin-top:16px;"></div>
+  </section>
+
+  <footer>
+    Decision-support tool, not financial advice. Verify issuer, audit, and regulatory details independently before setting allocation policy.
+  </footer>
+</div>
+
+<script>
+const BAND_COLOR = {LOW:"var(--low)", MEDIUM:"var(--medium)", HIGH:"var(--high)", CRITICAL:"var(--critical)"};
+
+const SAMPLE_REPORT = {"generated_at": "2026-09-03T03:24:45.758736+00:00", "chain": "Sui", "stablecoins": [{"symbol": "USDC", "name": "USD Coin", "circulating_usd": 900000000.0, "price": 0.9999, "peg_type": "peggedUSD", "peg_mechanism": "fiat-backed", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Circle", "mechanism": "fiat-backed", "regulated": true, "attestation": "monthly", "notes": "Fiat/cash-equivalent reserves, monthly attestations, US-regulated issuer."}, "peg_deviation_score": 5.0, "peg_deviation_fraction": -9.999999999998899e-05, "mechanism_score": 15.0, "issuer_regulatory_score": 10.0, "attestation_score": 20.0, "liquidity_score": 0.0, "peg_alert": false, "composite_score": 8.0, "risk_band": "LOW", "suggested_max_allocation": 0.4}, {"symbol": "USDSUI", "name": "Sui Dollar", "circulating_usd": 300000000.0, "price": 1.0, "peg_type": "peggedUSD", "peg_mechanism": "tokenized-treasury", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Bridge (Stripe)", "mechanism": "tokenized-treasury", "regulated": true, "attestation": "monthly", "notes": "Sui-native stablecoin issued via Bridge's Open Issuance platform; reserves in US Treasuries held by BlackRock/Fidelity/Superstate. Launched Mar 2026 -- limited track record."}, "peg_deviation_score": 5.0, "peg_deviation_fraction": 0.0, "mechanism_score": 20.0, "issuer_regulatory_score": 10.0, "attestation_score": 20.0, "liquidity_score": 16.7, "peg_alert": false, "composite_score": 13.2, "risk_band": "LOW", "suggested_max_allocation": 0.4}, {"symbol": "USDT", "name": "Tether", "circulating_usd": 250000000.0, "price": 1.0001, "peg_type": "peggedUSD", "peg_mechanism": "fiat-backed", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Tether", "mechanism": "fiat-backed", "regulated": false, "attestation": "quarterly", "notes": "Largest stablecoin by supply; reserve composition and audit history remain a recurring risk-committee discussion point."}, "peg_deviation_score": 5.0, "peg_deviation_fraction": 9.999999999998899e-05, "mechanism_score": 15.0, "issuer_regulatory_score": 45.0, "attestation_score": 40.0, "liquidity_score": 33.3, "peg_alert": false, "composite_score": 23.6, "risk_band": "LOW", "suggested_max_allocation": 0.4}, {"symbol": "AUSD", "name": "Agora Dollar", "circulating_usd": 40000000.0, "price": 1.0002, "peg_type": "peggedUSD", "peg_mechanism": "fiat-backed", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Agora", "mechanism": "fiat-backed", "regulated": true, "attestation": "monthly", "notes": "Fiat-backed multi-chain stablecoin."}, "peg_deviation_score": 5.0, "peg_deviation_fraction": 0.00019999999999997797, "mechanism_score": 15.0, "issuer_regulatory_score": 10.0, "attestation_score": 20.0, "liquidity_score": 66.7, "peg_alert": false, "composite_score": 24.7, "risk_band": "LOW", "suggested_max_allocation": 0.4}, {"symbol": "USDY", "name": "Ondo US Dollar Yield", "circulating_usd": 25000000.0, "price": 1.045, "peg_type": "peggedUSD", "peg_mechanism": "tokenized-treasury", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Ondo Finance", "mechanism": "tokenized-treasury", "regulated": true, "attestation": "monthly", "notes": "Yield-bearing tokenized short-term US Treasuries / bank deposits note; price accrues above $1 over time by design.", "yield_accruing": true}, "peg_deviation_score": 5.0, "peg_deviation_fraction": 0.04499999999999993, "mechanism_score": 20.0, "issuer_regulatory_score": 10.0, "attestation_score": 20.0, "liquidity_score": 100.0, "peg_alert": false, "composite_score": 34.0, "risk_band": "MEDIUM", "suggested_max_allocation": 0.2}, {"symbol": "SUIUSDE", "name": "Ethena USDe (Sui)", "circulating_usd": 120000000.0, "price": 0.9985, "peg_type": "peggedUSD", "peg_mechanism": "synthetic-delta-neutral", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "Ethena", "mechanism": "synthetic-delta-neutral", "regulated": false, "attestation": "real-time", "notes": "Delta-neutral synthetic dollar; depends on perp funding rates and hedging execution rather than pure cash reserves. Higher structural risk than fiat-backed coins."}, "peg_deviation_score": 15.0, "peg_deviation_fraction": -0.0014999999999999458, "mechanism_score": 55.0, "issuer_regulatory_score": 45.0, "attestation_score": 5.0, "liquidity_score": 50.0, "peg_alert": false, "composite_score": 35.2, "risk_band": "MEDIUM", "suggested_max_allocation": 0.2}, {"symbol": "FDUSD", "name": "First Digital USD", "circulating_usd": 30000000.0, "price": 0.997, "peg_type": "peggedUSD", "peg_mechanism": "fiat-backed", "source": "sample", "fetched_at": 1788405885.7578628, "metadata": {"issuer": "First Digital Labs", "mechanism": "fiat-backed", "regulated": false, "attestation": "monthly", "notes": "Has previously experienced brief depeg episodes tied to issuer scrutiny; monitor peg closely."}, "peg_deviation_score": 40.0, "peg_deviation_fraction": -0.0030000000000000027, "mechanism_score": 15.0, "issuer_regulatory_score": 45.0, "attestation_score": 20.0, "liquidity_score": 83.3, "peg_alert": true, "composite_score": 44.6, "risk_band": "MEDIUM", "suggested_max_allocation": 0.2}], "proposed_allocations": {"USDC": 0.35, "USDSUI": 0.3, "USDT": 0.15, "AUSD": 0.1, "SUIUSDE": 0.1}, "portfolio_hhi": 2550.0, "portfolio_hhi_label": "highly concentrated", "policy_violations": [], "ai_assessment": null};
+
+function fmtUsd(n){
+  if(n>=1e9) return "$"+(n/1e9).toFixed(2)+"B";
+  if(n>=1e6) return "$"+(n/1e6).toFixed(1)+"M";
+  if(n>=1e3) return "$"+(n/1e3).toFixed(0)+"K";
+  return "$"+n.toFixed(0);
+}
+
+function render(report){
+  document.getElementById("generated-at").textContent =
+    report.generated_at ? new Date(report.generated_at).toLocaleString() : "—";
+  document.getElementById("chain-name").textContent = report.chain || "Sui";
+
+  const rows = document.getElementById("coin-rows");
+  rows.innerHTML = "";
+  const alertContainer = document.getElementById("alert-container");
+  alertContainer.innerHTML = "";
+
+  report.stablecoins.forEach(c=>{
+    const color = BAND_COLOR[c.risk_band] || "var(--slate)";
+    const row = document.createElement("div");
+    row.className = "row";
+    row.innerHTML = `
+      <div class="sym mono">${c.symbol}<span class="name">${c.name||""}</span></div>
+      <div>
+        <div class="bar-track"><div class="bar-fill" style="width:${c.composite_score}%;background:${color};"></div></div>
+        <div class="score-line">
+          <span>${c.metadata.mechanism} · ${c.metadata.issuer}</span>
+          <span class="mono">${fmtUsd(c.circulating_usd)} on Sui</span>
+        </div>
+      </div>
+      <div class="band"><span class="dot" style="background:${color};"></span>${c.risk_band} · <span class="mono">${c.composite_score}</span></div>
+      <div class="cap">max <b>${(c.suggested_max_allocation*100).toFixed(0)}%</b></div>
+    `;
+    rows.appendChild(row);
+
+    if(c.peg_alert){
+      const box = document.createElement("div");
+      box.className = "alert-box";
+      const dev = (c.peg_deviation_fraction*100).toFixed(2);
+      box.textContent = `Peg alert — ${c.symbol} trading ${dev>0?"+":""}${dev}% off $1.00.`;
+      alertContainer.appendChild(box);
+    }
+  });
+
+  const portfolioSection = document.getElementById("portfolio-section");
+  if(report.proposed_allocations){
+    portfolioSection.style.display = "block";
+    const list = document.getElementById("allocation-list");
+    list.innerHTML = "";
+    Object.entries(report.proposed_allocations).forEach(([sym,w])=>{
+      const r = document.createElement("div");
+      r.className = "alloc-row";
+      r.innerHTML = `
+        <div class="mono">${sym}</div>
+        <div class="alloc-track"><div class="alloc-fill" style="width:${(w*100).toFixed(1)}%;"></div></div>
+        <div class="mono" style="text-align:right;">${(w*100).toFixed(1)}%</div>
+      `;
+      list.appendChild(r);
+    });
+    document.getElementById("hhi-val").textContent = report.portfolio_hhi ?? "—";
+    document.getElementById("hhi-label").textContent = report.portfolio_hhi_label || "";
+
+    const violations = document.getElementById("violations");
+    violations.innerHTML = "";
+    if(report.policy_violations && report.policy_violations.length){
+      report.policy_violations.forEach(v=>{
+        const box = document.createElement("div");
+        box.className = "alert-box";
+        box.textContent = `${v.symbol} — ${v.issue}`;
+        violations.appendChild(box);
+      });
+    }
+  } else {
+    portfolioSection.style.display = "none";
+  }
+
+  const aiSection = document.getElementById("ai-section");
+  if(report.ai_assessment){
+    aiSection.style.display = "block";
+    const aiCoins = document.getElementById("ai-coins");
+    aiCoins.innerHTML = "";
+    (report.ai_assessment.per_coin||[]).forEach(c=>{
+      const div = document.createElement("div");
+      div.className = "coin-narrative";
+      const flags = (c.follow_up_flags||[]).map(f=>`<div class="ai-note">Follow-up: ${f}</div>`).join("");
+      div.innerHTML = `<div class="h mono">${c.symbol}</div><p>${c.narrative}</p>${flags}`;
+      aiCoins.appendChild(div);
+    });
+    document.getElementById("ai-portfolio").innerHTML =
+      report.ai_assessment.portfolio_commentary ? `<p>${report.ai_assessment.portfolio_commentary}</p>` : "";
+    const actions = report.ai_assessment.top_priority_actions || [];
+    document.getElementById("ai-actions").innerHTML = actions.length
+      ? "<h2>Top priority actions</h2><ul>"+actions.map(a=>`<li>${a}</li>`).join("")+"</ul>"
+      : "";
+  } else {
+    aiSection.style.display = "none";
+  }
+}
+
+document.getElementById("file-input").addEventListener("change", (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (evt)=>{
+    try{
+      const data = JSON.parse(evt.target.result);
+      render(data);
+      document.getElementById("load-status").textContent = "loaded: "+file.name;
+    }catch(err){
+      document.getElementById("load-status").textContent = "failed to parse "+file.name;
+    }
+  };
+  reader.readAsText(file);
+});
+
+render(SAMPLE_REPORT);
+</script>
+</body>
+</html>

@@ -16,6 +16,12 @@ backend/dist/
 blockchain/build/
 blockchain/.sui/
 
+# AI layer (Python)
+__pycache__/
+*.pyc
+ai-layer/reports/
+ai-layer/.venv/
+
 # Generated files
 package_summaries/
 src/contracts/generated/
