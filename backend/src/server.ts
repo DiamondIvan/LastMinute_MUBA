@@ -72,7 +72,14 @@ app.post('/api/research', async (req, res) => {
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
-  const report = await generateIntelligenceReport(question);
+  let report;
+  try {
+    report = await generateIntelligenceReport(question);
+  } catch (err) {
+    const { status, error } = aiErrorResponse(err);
+    console.error('/api/research failed:', err);
+    return res.status(status).json({ error });
+  }
   const contentHash = sha256Hex(report.full);
 
   // Encrypt then push the premium body to Walrus (decentralized, at-rest
@@ -168,7 +175,14 @@ app.post('/api/reports/register', async (req, res) => {
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
-  const report = await generateIntelligenceReport(question);
+  let report;
+  try {
+    report = await generateIntelligenceReport(question);
+  } catch (err) {
+    const { status, error } = aiErrorResponse(err);
+    console.error('/api/reports/register failed:', err);
+    return res.status(status).json({ error });
+  }
   const contentHash = sha256Hex(report.full);
 
   // Seal: encrypt the premium body under the admin identity. Only a holder of
@@ -228,6 +242,34 @@ app.use((err: unknown, _req: express.Request, res: express.Response, _next: expr
   console.error(err);
   res.status(500).json({ error: err instanceof Error ? err.message : 'internal error' });
 });
+
+/**
+ * Turns an OpenAI SDK failure into a status + message the UI can show.
+ *
+ * Without this the browser just sees a generic 5xx (or a 502 from the Vite dev
+ * proxy) and the actual cause - no credits, bad key, unknown model - stays
+ * buried in the server log.
+ */
+function aiErrorResponse(err: unknown): { status: number; error: string } {
+  const status = (err as { status?: number })?.status;
+  const code = (err as { code?: string })?.code;
+  const message = err instanceof Error ? err.message : String(err);
+
+  if (code === 'credit_balance_exhausted' || code === 'insufficient_quota') {
+    return {
+      status: 402,
+      error:
+        'OpenAI account has no credits. Add billing at ' +
+        'https://platform.openai.com/settings/organization/billing',
+    };
+  }
+  if (status === 401) return { status: 401, error: 'OpenAI rejected the API key (401).' };
+  if (status === 404 || code === 'model_not_found') {
+    return { status: 502, error: 'OpenAI does not recognise the model. ' + message };
+  }
+  if (status === 429) return { status: 429, error: 'OpenAI rate limit. ' + message };
+  return { status: 502, error: 'AI pipeline failed: ' + message };
+}
 
 /** The wallet address proven by the `Authorization: Bearer *** header, if any. */
 function addressFromBearer(req: express.Request): string | null {

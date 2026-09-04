@@ -1,4 +1,4 @@
-import { DeepBookClient, testnetPools, testnetCoins } from '@mysten/deepbook-v3';
+import { DeepBookClient, mainnetPools, mainnetCoins } from '@mysten/deepbook-v3';
 import { SuiGrpcClient } from '@mysten/sui/grpc';
 
 /**
@@ -6,13 +6,15 @@ import { SuiGrpcClient } from '@mysten/sui/grpc';
  *
  * Replaces the previous hardcoded / off-chain-scraped market prices in the
  * StablecoinTracker and StablecoinNewsFeed. Prices are read directly from
- * DeepBook V3 pools on-chain (Level2 order book):
+ * DeepBook V3 pools on-chain (Level2 order book).
  *
- *   - SUI/USDC   → `SUI_DBUSDC` pool
- *   - USDT/USDC  → `DBUSDT_DBUSDC` pool
- *   - WAL/USDC   → `WAL_DBUSDC` pool
+ * Reads from **mainnet** while the rest of the app transacts on testnet.
+ * That is deliberate: testnet DeepBook pools carry no liquidity, so
+ * `book::mid_price` aborts with code 2 (empty order book) on every call. Price
+ * discovery does not need to happen on the chain we transact on, and mainnet is
+ * where the real quotes are.
  *
- * These are read-only queries. No signer or gas is required.
+ * These are read-only queries — no signer, no gas, no wallet.
  */
 
 export interface DeepBookPrice {
@@ -29,14 +31,13 @@ export interface DeepBookPrice {
   poolId: string;
 }
 
-const TESTNET_GRPC_URL = 'https://fullnode.testnet.sui.io:443';
+const MAINNET_GRPC_URL = 'https://fullnode.mainnet.sui.io:443';
 
 // Pool key → human symbol mapping for the dashboard.
 const POOL_SYMBOLS: Record<string, { base: string; quote: string; label: string }> = {
-  SUI_DBUSDC: { base: 'SUI', quote: 'DBUSDC', label: 'SUI' },
-  DBUSDT_DBUSDC: { base: 'DBUSDT', quote: 'DBUSDC', label: 'USDT' },
-  WAL_DBUSDC: { base: 'WAL', quote: 'DBUSDC', label: 'WAL' },
-  DBTC_DBUSDC: { base: 'DBTC', quote: 'DBUSDC', label: 'BTC' },
+  SUI_USDC: { base: 'SUI', quote: 'USDC', label: 'SUI' },
+  WUSDT_USDC: { base: 'WUSDT', quote: 'USDC', label: 'USDT' },
+  DEEP_USDC: { base: 'DEEP', quote: 'USDC', label: 'DEEP' },
 };
 
 let _client: DeepBookClient | null = null;
@@ -45,16 +46,18 @@ function deepBookClient(): DeepBookClient {
   if (_client) return _client;
 
   const suiClient = new SuiGrpcClient({
-    network: 'testnet' as const,
-    baseUrl: TESTNET_GRPC_URL,
+    network: 'mainnet' as const,
+    baseUrl: MAINNET_GRPC_URL,
   });
 
   _client = new DeepBookClient({
     client: suiClient as any,
-    address: '0x0000000000000000000000000000000000000000000000000000000000000000', // read-only
-    network: 'testnet' as const,
-    coins: testnetCoins,
-    pools: testnetPools,
+    // Sender for the read-only simulation. Any well-formed address works; it is
+    // never asked to sign and pays nothing.
+    address: '0xb93589da91d839f0a27334d1eafd76ec792210d1ef46e70a56f0006d0c4b3ca3',
+    network: 'mainnet' as const,
+    coins: mainnetCoins,
+    pools: mainnetPools,
   });
 
   return _client;
@@ -109,7 +112,7 @@ export async function getDeepBookPriceFeed(): Promise<Record<string, DeepBookPri
         bestBid,
         bestAsk,
         spreadPct,
-        poolId: testnetPools[poolKey as keyof typeof testnetPools]?.address ?? poolKey,
+        poolId: mainnetPools[poolKey as keyof typeof mainnetPools]?.address ?? poolKey,
       };
     } catch (e) {
       console.warn(`DeepBook feed failed for ${poolKey}:`, e);
