@@ -242,7 +242,7 @@ Base `http://localhost:8787`; Vite proxies `/api` to it in dev.
 | `POST /api/auth/nonce` | `{ address }` | `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` | `{ token }` |
 
-`/api/research` returns 503 without `ANTHROPIC_API_KEY`; `/api/reports/register`
+`/api/research` returns 503 without `OPENAI_API_KEY`; `/api/reports/register`
 also needs the chain env.
 
 ### Unlocking requires a wallet signature
@@ -270,7 +270,7 @@ cached in `sessionStorage`. `frontend/src/lib/session.ts` wraps this.
 
 | Var | Purpose |
 | --- | --- |
-| `ANTHROPIC_API_KEY` | the AI agents |
+| `OPENAI_API_KEY` | the AI agents |
 | `PACKAGE_ID`, `CONFIG_ID` | contract addresses |
 | `ADMIN_CAP_ID`, `ADMIN_SECRET_KEY` | admin registration only — **server-side only** |
 | `DEMO_REPORT_OBJECT_ID` | the report the demo purchase flow targets |

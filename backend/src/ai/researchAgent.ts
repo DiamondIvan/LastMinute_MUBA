@@ -1,5 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
-import { anthropic, MODEL } from './claude.js';
+import type { Response as OpenAIResponse } from 'openai/resources/responses/responses';
+import { openaiClient, MODEL } from './openaiClient.js';
 import type { ResearchResult, Source } from './types.js';
 
 const SYSTEM = [
@@ -11,44 +11,44 @@ const SYSTEM = [
 
 /**
  * Runs a real web search and returns a written briefing plus the sources found.
- * One Claude call with the server-side web_search tool.
+ * One Responses API call with the hosted `web_search` tool.
+ *
+ * Sources come from the `url_citation` annotations the model attaches to its
+ * output text, so they are the pages it actually cited rather than everything
+ * the search happened to surface.
  */
 export async function research(question: string): Promise<ResearchResult> {
-  const response = await anthropic.messages.create({
+  const response = await openaiClient().responses.create({
     model: MODEL,
-    max_tokens: 16000,
-    thinking: { type: 'adaptive' },
-    system: SYSTEM,
-    tools: [{ type: 'web_search_20260209', name: 'web_search', max_uses: 6 }],
-    messages: [{ role: 'user', content: `Research this question:\n\n${question}` }],
+    instructions: SYSTEM,
+    tools: [{ type: 'web_search' }],
+    input: `Research this question:\n\n${question}`,
   });
 
-  const findings = response.content
-    .filter((b): b is Anthropic.TextBlock => b.type === 'text')
-    .map((b) => b.text)
-    .join('\n')
-    .trim();
-
-  return { findings, sources: extractSources(response.content) };
+  return {
+    findings: (response.output_text ?? '').trim(),
+    sources: extractSources(response),
+  };
 }
 
-function extractSources(content: Anthropic.ContentBlock[]): Source[] {
+function extractSources(response: OpenAIResponse): Source[] {
   const out: Source[] = [];
   const seen = new Set<string>();
 
-  for (const block of content) {
-    if (block.type !== 'web_search_tool_result') continue;
-    if (!Array.isArray(block.content)) continue; // error object, not results
-    for (const r of block.content) {
-      if (!r.url || seen.has(r.url)) continue;
-      seen.add(r.url);
-      out.push({
-        title: r.title || r.url,
-        url: r.url,
-        publisher: hostOf(r.url),
-        publishedAt: r.page_age ?? undefined,
-        snippet: '',
-      });
+  for (const item of response.output ?? []) {
+    if (item.type !== 'message') continue;
+    for (const block of item.content ?? []) {
+      if (block.type !== 'output_text') continue;
+      for (const ann of block.annotations ?? []) {
+        if (ann.type !== 'url_citation' || !ann.url || seen.has(ann.url)) continue;
+        seen.add(ann.url);
+        out.push({
+          title: ann.title || ann.url,
+          url: ann.url,
+          publisher: hostOf(ann.url),
+          snippet: '',
+        });
+      }
     }
   }
   return out;

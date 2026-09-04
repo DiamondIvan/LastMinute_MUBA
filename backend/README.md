@@ -5,9 +5,9 @@ wallet-signature auth.
 
 ## Status: scaffolded, AI agents implemented
 
-The AI agents make **real Claude calls** (`@anthropic-ai/sdk`, model
-`claude-opus-5`, set in `src/ai/claude.ts`). Blockchain + Walrus + auth paths
-use the real SDKs too. Set `ANTHROPIC_API_KEY` in `.env` to use `/api/research`.
+The AI agents make **real OpenAI calls** (`openai`, model `gpt-5.6`, set in
+`src/ai/openaiClient.ts` — matching `ai-layer/`). Blockchain + Walrus + auth paths
+use the real SDKs too. Set `OPENAI_API_KEY` in `.env` to use `/api/research`.
 
 ```bash
 cd backend
@@ -23,9 +23,9 @@ src/
 ├── server.ts              Express app + routes
 ├── config.ts              env loading + chainConfigured() guard
 ├── ai/
-│   ├── claude.ts           shared Anthropic client + MODEL constant
+│   ├── openaiClient.ts     lazy OpenAI client + MODEL constant
 │   ├── types.ts            IntelligenceReport / Analysis / Source / ResearchResult
-│   ├── researchAgent.ts    Claude + web_search server tool → briefing + sources
+│   ├── researchAgent.ts    OpenAI + hosted web_search → briefing + cited sources
 │   ├── credibilityAgent.ts structured call → score 0..1, drop weak, sort
 │   ├── analysisAgent.ts    structured call → sentiment / confidence / risk / key points
 │   └── synthesisAgent.ts   orchestrates the 4-call pipeline → { title, summary, full }
@@ -46,14 +46,14 @@ src/
 | --- | --- |
 | `GET /health` | status, network, whether the chain env is configured |
 | `POST /api/research` | `{ question }` → free summary + `analysis` + `contentHash` + `reportObjectId` (the demo report to buy) |
-| `POST /api/reports/:contentHash/unlock` | `{ address }` → `{ full }` **iff** that wallet owns a `ResearchAccess` for `DEMO_REPORT_OBJECT_ID` (else 403) |
+| `POST /api/reports/:contentHash/unlock` | `Authorization: Bearer <token>` → `{ full }` **iff** that wallet owns a `ResearchAccess` for `DEMO_REPORT_OBJECT_ID` (401 without a token, 403 without access) |
 | `POST /api/reports/register` | admin: generate → Walrus → `register_report` on Sui. Needs the chain env. |
 | `POST /api/auth/nonce` | `{ address }` → `{ nonce, message }` |
 | `POST /api/auth/verify` | `{ address, nonce, signature }` → `{ token }` |
 
 ## Env (`.env.example`)
 
-`ANTHROPIC_API_KEY` powers the agents (dotenv loads it; the SDK reads it).
+`OPENAI_API_KEY` powers the agents (dotenv loads it; the SDK reads it).
 `ADMIN_SECRET_KEY` is a `suiprivkey1...` string:
 `sui keytool export --key-identity <your-testnet-address>`. Server-side only —
 never in the frontend or git. `PACKAGE_ID` / `CONFIG_ID` / `ADMIN_CAP_ID` come
@@ -61,9 +61,9 @@ from `sui client publish`.
 
 ## AI pipeline (`src/ai/`)
 
-`generateIntelligenceReport(question)` runs four Claude calls:
+`generateIntelligenceReport(question)` runs four model calls:
 
-1. **research** — `claude-opus-5` + the `web_search` server tool → a factual
+1. **research** — `gpt-5.6` + the hosted `web_search` tool → a factual
    briefing plus the sources it cited.
 2. **credibility** — structured call scoring each source 0..1; drops anything
    below 0.35, sorts best-first.
@@ -71,7 +71,7 @@ from `sui client publish`.
    keyDevelopments, risks }`, grounded only in the briefing.
 4. **synthesis** — structured call → `{ title, summary, full }`.
 
-Model is set in `src/ai/claude.ts`. ~4 model calls + web search per report
+Model is set in `src/ai/openaiClient.ts`. ~4 model calls + web search per report
 (tens of seconds). For deterministic RSS sources alongside web search, add a
 fetcher and merge into `research()`.
 

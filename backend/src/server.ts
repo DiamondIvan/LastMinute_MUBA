@@ -2,7 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import { config, chainConfigured } from './config.js';
 import { generateIntelligenceReport } from './ai/synthesisAgent.js';
-import { aiConfigured } from './ai/claude.js';
+import { aiConfigured } from './ai/openaiClient.js';
 import { sha256Hex } from './util/hash.js';
 import { uploadToWalrus, readFromWalrus } from './walrus/uploadReport.js';
 import { encryptReportFor, decryptReport } from './seal/sealService.js';
@@ -68,7 +68,7 @@ app.get('/health', (_req, res) => {
 // Run the AI pipeline. Returns the FREE summary + the content hash.
 // The full report is Seal-encrypted and stored on Walrus (see seal/).
 app.post('/api/research', async (req, res) => {
-  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
+  if (!aiConfigured()) return res.status(503).json({ error: 'OPENAI_API_KEY not set' });
   const question = String(req.body?.question ?? '').trim();
   if (!question) return res.status(400).json({ error: 'question is required' });
 
@@ -159,7 +159,7 @@ app.post('/api/reports/:contentHash/unlock', async (req, res) => {
 
 // Admin: generate (or accept) a report, encrypt + store on Walrus, anchor on Sui.
 app.post('/api/reports/register', async (req, res) => {
-  if (!aiConfigured()) return res.status(503).json({ error: 'ANTHROPIC_API_KEY not set' });
+  if (!aiConfigured()) return res.status(503).json({ error: 'OPENAI_API_KEY not set' });
   if (!chainConfigured()) {
     return res
       .status(503)

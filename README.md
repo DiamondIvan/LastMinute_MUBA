@@ -10,7 +10,7 @@ Built for the MUBA Blockchain Hackathon — AI × Sui track.
 | Layer | Tech |
 | --- | --- |
 | Frontend | React + TypeScript + Vite + Sui dApp Kit |
-| Backend | Node + Express, AI research/analysis agents |
+| Backend | Node + Express, OpenAI research/analysis agents |
 | Storage | Walrus (full report blobs) |
 | Chain | Sui + Move 2024 (`blockchain/` package) |
 
@@ -70,10 +70,9 @@ python main.py --with-news                 # adds the news agent
 Verified working: pulls 8 live Sui stablecoins and ranks them USDC (8.0, LOW)
 through BUCK (45.5, HIGH).
 
-> **Note:** this layer calls **OpenAI** (`openai` in `requirements.txt`,
-> `MODEL = "gpt-5.6"`), while the Node backend in `backend/` uses **Claude**.
-> The `ai-layer` README text refers to Claude; the code does not. Worth
-> reconciling before the pitch so the stack story is consistent.
+Both this layer and the Node backend now call **OpenAI** (`gpt-5.6`), so one
+`OPENAI_API_KEY` drives the whole project. The `ai-layer` README text still
+refers to Claude in places — prose only, the code is OpenAI throughout.
 
 ## Blockchain — build & test
 

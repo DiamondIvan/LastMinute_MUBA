@@ -128,7 +128,7 @@ transaction bytes to `decrypt`.
 
 ### 4. No rate limiting on `/api/research` — **Medium**
 
-Each call runs four Claude calls plus web search. There is no auth, no quota and
+Each call runs four model calls plus web search. There is no auth, no quota and
 no cost ceiling, so an unauthenticated caller can drain the API budget.
 
 Accepted for a local hackathon demo. Do not expose this endpoint publicly
