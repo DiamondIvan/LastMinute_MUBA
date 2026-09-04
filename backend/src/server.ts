@@ -43,6 +43,14 @@ interface ReportIndexEntry {
   blobId: string;
   /** SHA-256 of the plaintext — the on-chain content_hash. */
   contentHash: string;
+  /**
+   * Plaintext body, kept so unlock still works when Seal/Walrus is
+   * unconfigured. Seal needs key servers (SEAL_KEY_SERVER_*) and a
+   * `seal_approve*` entry in the Move package; without both, encryption throws
+   * and the blob is never written. Serving from here keeps the paid flow
+   * working meanwhile. See docs/SECURITY.md, Finding 4.
+   */
+  full: string;
 }
 const reportIndex = new Map<string, ReportIndexEntry>();
 
@@ -88,6 +96,7 @@ app.post('/api/research', async (req, res) => {
     generatedAt: report.generatedAt,
     blobId: blobId ?? '',
     contentHash,
+    full: report.full,
   });
 
   res.json({
@@ -129,17 +138,23 @@ app.post('/api/reports/:contentHash/unlock', async (req, res) => {
     return res.status(403).json({ error: 'no ResearchAccess for this report' });
   }
 
-  if (!entry.blobId) {
-    return res.status(503).json({ error: 'blob not stored on Walrus yet' });
+  // Preferred path: fetch the encrypted blob from Walrus and decrypt via Seal.
+  // Access is already gated by the on-chain check above; Seal adds encryption
+  // at rest. It is skipped when Seal has no key servers configured.
+  if (entry.blobId) {
+    try {
+      const encryptedObject = await readFromWalrus(entry.blobId);
+      const { plaintext } = await decryptReport(encryptedObject, { buyerAddress: address });
+      return res.json({ full: plaintext, source: 'walrus+seal' });
+    } catch (e) {
+      console.error('Walrus/Seal read failed, serving stored body instead:', e);
+    }
   }
 
-  // Fetch the encrypted blob from Walrus, then decrypt via Seal. Decryption is
-  // gated on the caller holding the on-chain access object (checked above).
-  const encryptedObject = await readFromWalrus(entry.blobId);
-  const { plaintext } = await decryptReport(encryptedObject, {
-    buyerAddress: address,
-  });
-  res.json({ full: plaintext });
+  if (!entry.full) {
+    return res.status(503).json({ error: 'report body unavailable' });
+  }
+  res.json({ full: entry.full, source: 'server' });
 });
 
 // Admin: generate (or accept) a report, encrypt + store on Walrus, anchor on Sui.
@@ -182,6 +197,7 @@ app.post('/api/reports/register', async (req, res) => {
     generatedAt: report.generatedAt,
     blobId,
     contentHash,
+    full: report.full,
   });
 
   res.json({ digest, reportObjectId, contentHash, blobId });

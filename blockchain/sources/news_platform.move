@@ -176,10 +176,17 @@ module blockchain::news_platform {
 
     // ---- mint (used by kiosk/resale) ---------------------------------------
 
-    /// Creates (mints) a new `ResearchReport`. Only callable from an authorized
-    /// context. Returns the report object so the caller can place it (e.g. into
-    /// the Kiosk for royalty-enforced resale).
-    public fun mint_report(
+    /// Creates (mints) a new `ResearchReport` and returns it, so the caller can
+    /// place it (e.g. into the Kiosk for royalty-enforced resale).
+    ///
+    /// `public(package)` on purpose. This constructor takes `creator` and
+    /// `created_at` as plain arguments and does NOT touch `report_registry`, so
+    /// as a `public fun` any wallet could have minted a report naming someone
+    /// else as creator, with a forged timestamp and a duplicate content hash —
+    /// forging exactly the provenance the product claims to prove. Restricting
+    /// it to this package makes `news_kiosk::mint_report_into_kiosk`, which is
+    /// gated on `MintCap`, the only way in.
+    public(package) fun mint_report(
         title: String,
         content_hash: String,
         walrus_blob_id: String,
