@@ -1,0 +1,18 @@
+[package]
+name = "swap_contract"
+edition = "2024"
+# If your Sui toolchain rejects `edition = "2024"`, use "2024.beta" instead.
+
+# Deliberately a SEPARATE package from ../blockchain (news_platform). That
+# package's sources/ already holds a second, undeployed module
+# (news_kiosk.move) specifically because publishing it would mint a new
+# PackageID and invalidate every object id the rest of this app references
+# (PlatformConfig, the demo ResearchReport, etc.) — see docs/SECURITY.md.
+# This swap module needed its own real, callable PackageID, so it gets its
+# own package entirely rather than risk that.
+#
+# Sui, MoveStdlib, etc. are injected automatically by the Sui CLI — do not add
+# an explicit `Sui = { git = ... }` dependency here.
+
+[addresses]
+swap_contract = "0x0"

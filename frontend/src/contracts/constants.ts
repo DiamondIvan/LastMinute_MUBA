@@ -23,3 +23,15 @@ export const KIOSK_STATE_TYPE = `${PACKAGE_ID}::news_kiosk::KioskState`;
 export function contractsConfigured(): boolean {
   return !PACKAGE_ID.startsWith('0xYOUR') && !CONFIG_ID.startsWith('0xYOUR');
 }
+
+// swap-contract package — separate deployment, testnet 2026-09-05. Real SUI <->
+// TestUSD swap (a custom demo coin this app mints itself, oracle-priced by the
+// backend), backing the AI-suggested-trade "Approve" flow for SUI proposals
+// only. See swap-contract/Published.toml for the rest of the deployed ids.
+export const SWAP_PACKAGE_ID = '0xec277d5aef1f357f6c137dd9d4c771a1041a63a1da9a02bc239717fbfd4de0b7';
+export const SWAP_CONFIG_ID = '0x0c7972a91b47533f67e538c23a27208f487bc0320fdcdfaddf9c92169c113d47';
+export const SWAP_TESTUSD_TYPE = `${SWAP_PACKAGE_ID}::swap::SWAP`;
+
+export function swapContractConfigured(): boolean {
+  return !!SWAP_PACKAGE_ID && !!SWAP_CONFIG_ID;
+}

@@ -8,7 +8,9 @@ import type { TradeProposal } from '../api';
  * a proposed action (the actual decision logic). The AI is not the thing
  * telling you to trade — it's the thing explaining what the data shows.
  *
- * Approving executes against the simulated ledger only.
+ * Approving a SUI suggestion executes a real on-chain swap when the swap
+ * contract is available (see TransactionScreen); every other asset only
+ * affects the practice portfolio, since no real swap is deployed for them.
  */
 
 interface Props {
@@ -18,9 +20,10 @@ interface Props {
   busyId: string | null;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
+  realSwapEnabled: boolean;
 }
 
-export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, onReject }: Props) {
+export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, onReject, realSwapEnabled }: Props) {
   return (
     <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4 mb-1">
@@ -30,8 +33,10 @@ export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, o
         </span>
       </div>
       <p className="text-xs text-gray-500 mb-5">
-        You decide — nothing executes without your approval, and approving only affects the practice
-        portfolio.
+        You decide — nothing executes without your approval.
+        {realSwapEnabled
+          ? ' Approving a SUI suggestion moves real testnet funds; everything else only affects the practice portfolio.'
+          : ' Approving only affects the practice portfolio.'}
       </p>
 
       {loading && proposals.length === 0 && (
@@ -53,6 +58,7 @@ export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, o
         {proposals.map((p) => {
           const busy = busyId === p.id;
           const isOpen = p.action === 'open';
+          const isRealSwap = realSwapEnabled && p.symbol === 'SUI';
           return (
             <div key={p.id} className="border border-gray-200 rounded-2xl p-4">
               <div className="flex items-center gap-2 mb-2">
@@ -66,6 +72,11 @@ export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, o
                 <span className="font-black text-gray-900">{p.symbol}</span>
                 {isOpen && p.notionalUsd !== undefined && (
                   <span className="text-sm font-bold text-gray-700">${p.notionalUsd}</span>
+                )}
+                {isRealSwap && (
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-emerald-600 text-white">
+                    Real
+                  </span>
                 )}
                 <span className="text-xs text-gray-400 ml-auto">@ ${p.price.toFixed(4)}</span>
               </div>
@@ -83,7 +94,7 @@ export function ProposalsPanel({ proposals, loading, error, busyId, onApprove, o
                   disabled={busy}
                   className="flex-1 bg-brand text-white font-bold text-sm py-2.5 rounded-xl hover:bg-brand/90 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                 >
-                  {busy ? 'Working…' : 'Approve'}
+                  {busy ? (isRealSwap ? 'Confirm in Wallet…' : 'Working…') : isRealSwap ? 'Approve — Swap' : 'Approve'}
                 </button>
                 <button
                   onClick={() => onReject(p.id)}

@@ -17,6 +17,7 @@ import { getTradeablePrices, getTradeableHistory, isTradeableSymbol } from './sc
 import { getCachedSignals, signalForSymbol } from './ai/tradingSignals.js';
 import { listPositions, openPosition, closePosition, listRejectedProposals, rejectProposal } from './db/paperTrades.js';
 import { buildProposals } from './trading/proposals.js';
+import { syncSwapPrice, readSwapConfig, swapConfigured } from './blockchain/swapAdmin.js';
 import { narrateDailyForecast, gonkaConfigured } from './ai/gonka.js';
 import { analyzeStablecoinNews, analyzeNewsImpact, analyzeAssetPredictions, analyzeCoin } from './ai/openrouter.js';
 import { issueNonce } from './auth/nonces.js';
@@ -472,6 +473,38 @@ app.post('/api/proposals/:address/reject', async (req, res) => {
   } catch (error) {
     console.error('Proposal reject error:', error);
     res.status(500).json({ error: error instanceof Error ? error.message : 'Failed to reject proposal' });
+  }
+});
+
+/**
+ * Real SUI <-> TestUSD swap contract (swap-contract/, a separate Move
+ * package from news_platform - see swap-contract/Move.toml for why). These
+ * two routes only read/write the on-chain price oracle; the actual swap
+ * transaction is built and signed client-side by the user's own wallet (see
+ * frontend/src/contracts/swap.ts) - the backend never executes a swap.
+ */
+app.get('/api/swap/config', async (_req, res) => {
+  try {
+    const snapshot = await readSwapConfig();
+    if (!snapshot) return res.status(503).json({ error: 'Swap contract not configured', configured: false });
+    res.json({ configured: true, ...snapshot });
+  } catch (error) {
+    console.error('Swap config read error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to read swap config' });
+  }
+});
+
+/** Admin-gated (same ADMIN_SECRET_KEY as /api/reports/register): pushes the current live SUI price on-chain. */
+app.post('/api/swap/price/sync', async (_req, res) => {
+  try {
+    if (!swapConfigured()) {
+      return res.status(503).json({ error: 'Swap contract env vars not set (SWAP_PACKAGE_ID / SWAP_CONFIG_ID / SWAP_ADMIN_CAP_ID)' });
+    }
+    const result = await syncSwapPrice();
+    res.json(result);
+  } catch (error) {
+    console.error('Swap price sync error:', error);
+    res.status(502).json({ error: error instanceof Error ? error.message : 'Failed to sync swap price' });
   }
 });
 

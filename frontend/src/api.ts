@@ -349,6 +349,24 @@ export async function rejectProposal(address: string, proposalId: string) {
   return post<{ rejected: string }>(`/api/proposals/${encodeURIComponent(address)}/reject`, { proposalId });
 }
 
+// ---- swap contract (real, on-chain SUI <-> TestUSD) ------------------------
+
+export interface SwapConfigSnapshot {
+  configured: boolean;
+  priceUsdMicros: number;
+  priceUsd: number;
+  suiReserveMist: number;
+  suiReserveSui: number;
+  lastUpdatedMs: number;
+}
+
+export async function fetchSwapConfig(): Promise<SwapConfigSnapshot> {
+  const res = await fetch('/api/swap/config');
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) throw new ApiError((json as any).error ?? res.statusText, res.status);
+  return json as SwapConfigSnapshot;
+}
+
 export async function fetchNewsImpact(title: string, coin: string, walletBalanceSui: number): Promise<NewsImpactAnalysis> {
   const res = await fetch('/api/forecast/news-impact', {
     method: 'POST',

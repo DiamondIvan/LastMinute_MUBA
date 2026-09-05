@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { useCurrentAccount, useCurrentClient, useDAppKit } from '@mysten/dapp-kit-react';
 import { Sidebar } from '../components/Sidebar';
 import { Topbar } from '../components/Topbar';
-import { DEMO_REPORT_OBJECT_ID, REPORT_PRICE_MIST, RESEARCH_ACCESS_TYPE, contractsConfigured } from '../contracts/constants';
+import { DEMO_REPORT_OBJECT_ID, REPORT_PRICE_MIST, RESEARCH_ACCESS_TYPE, contractsConfigured, swapContractConfigured } from '../contracts/constants';
 import { buildPurchaseReportTx } from '../contracts/purchaseReport';
+import { buildSwapSuiToTestUsdTx, buildSwapTestUsdToSuiTx } from '../contracts/swap';
 import { useOnChainReport } from '../hooks/useOnChainReport';
 import { SignalsPanel } from '../components/SignalsPanel';
 import { PaperTradingPanel } from '../components/PaperTradingPanel';
@@ -16,9 +17,11 @@ import {
   fetchProposals,
   approveProposal,
   rejectProposal,
+  fetchSwapConfig,
   type SignalsSnapshot,
   type PaperLedger,
   type TradeProposal,
+  type SwapConfigSnapshot,
 } from '../api';
 
 /**
@@ -151,11 +154,79 @@ export function TransactionScreen() {
     void loadProposals();
   }, [loadProposals]);
 
+  // --- Real on-chain swap (SUI <-> TestUSD) — backs "Approve" for SUI only ---
+  const [swapConfig, setSwapConfig] = useState<SwapConfigSnapshot | null>(null);
+  const [swapDigest, setSwapDigest] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!swapContractConfigured()) return;
+    fetchSwapConfig()
+      .then(setSwapConfig)
+      .catch((e) => console.warn('Failed to load swap config:', e));
+  }, []);
+
+  const swapReady = swapContractConfigured() && !!swapConfig?.configured && swapConfig.priceUsd > 0;
+
+  /**
+   * Approving a SUI proposal executes a real swap before it ever touches the
+   * paper ledger: "open" spends TestUSD for SUI (going long, for real);
+   * "close" sells that same notional of SUI back into TestUSD at the current
+   * price. Every other asset has no real swap deployed, so it stays
+   * paper-only.
+   */
+  const executeRealSuiSwap = async (proposal: TradeProposal) => {
+    if (!swapConfig) throw new Error('Swap price not loaded yet');
+    let notionalUsd = proposal.notionalUsd ?? 0;
+    if (proposal.action === 'close' && proposal.positionId) {
+      const position = ledger?.open.find((p) => p.id === proposal.positionId);
+      notionalUsd = position?.notionalUsd ?? notionalUsd;
+    }
+    if (notionalUsd <= 0) throw new Error('Nothing to swap for this proposal');
+
+    const tx =
+      proposal.action === 'open'
+        ? buildSwapTestUsdToSuiTx(Math.round(notionalUsd * 1_000_000))
+        : buildSwapSuiToTestUsdTx(Math.round((notionalUsd / swapConfig.priceUsd) * 1_000_000_000));
+
+    const result = await dAppKit.signAndExecuteTransaction({ transaction: tx });
+    if (result.$kind === 'FailedTransaction') {
+      throw new Error(`Swap failed: ${JSON.stringify(result.FailedTransaction.status)}`);
+    }
+    setSwapDigest(result.Transaction?.digest ?? null);
+    fetchSwapConfig().then(setSwapConfig).catch(() => {});
+  };
+
+  const [bootstrapBusy, setBootstrapBusy] = useState(false);
+  const [bootstrapError, setBootstrapError] = useState<string | null>(null);
+
+  /** Manual "get some TestUSD" swap — bootstraps a fresh wallet so the real "open" flow has something to spend. */
+  const handleGetTestUsd = async () => {
+    setBootstrapBusy(true);
+    setBootstrapError(null);
+    try {
+      const tx = buildSwapSuiToTestUsdTx(1_000_000_000); // 1 SUI
+      const result = await dAppKit.signAndExecuteTransaction({ transaction: tx });
+      if (result.$kind === 'FailedTransaction') {
+        throw new Error(`Swap failed: ${JSON.stringify(result.FailedTransaction.status)}`);
+      }
+      setSwapDigest(result.Transaction?.digest ?? null);
+      fetchSwapConfig().then(setSwapConfig).catch(() => {});
+    } catch (e) {
+      setBootstrapError(e instanceof Error ? e.message : 'Swap failed');
+    } finally {
+      setBootstrapBusy(false);
+    }
+  };
+
   const handleApprove = async (proposalId: string) => {
     if (!account?.address) return;
+    const proposal = proposals.find((p) => p.id === proposalId);
     setProposalBusyId(proposalId);
     setProposalsError(null);
     try {
+      if (proposal?.symbol === 'SUI' && swapReady) {
+        await executeRealSuiSwap(proposal);
+      }
       await approveProposal(account.address, proposalId);
       await Promise.all([loadLedger(), loadProposals()]);
     } catch (e) {
@@ -319,6 +390,41 @@ export function TransactionScreen() {
             {/* Right: suggestions to approve/reject, then the simulated portfolio */}
             {account ? (
               <div className="flex flex-col gap-6">
+                {swapReady && (
+                  <div className="bg-white border border-gray-100 rounded-3xl p-6 shadow-sm">
+                    <div className="flex items-start justify-between gap-4 mb-1">
+                      <h3 className="text-lg font-black text-gray-900">SUI ↔ TestUSD Swap</h3>
+                      <span className="text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full bg-emerald-100 text-emerald-800 whitespace-nowrap">
+                        Real (testnet)
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4">
+                      Real on-chain contract, oracle price ${swapConfig?.priceUsd.toFixed(4)}/SUI. Approving a{' '}
+                      <span className="font-bold">SUI</span> suggestion below spends real testnet funds via this
+                      contract. Get some TestUSD first so an &quot;open&quot; approval has something to spend.
+                    </p>
+                    {bootstrapError && (
+                      <p className="text-xs text-rose-600 font-bold mb-3">{bootstrapError}</p>
+                    )}
+                    <button
+                      onClick={handleGetTestUsd}
+                      disabled={bootstrapBusy}
+                      className="w-full bg-gray-900 text-white font-bold text-sm py-3 rounded-xl hover:bg-gray-800 transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      {bootstrapBusy ? 'Confirm in Wallet…' : 'Get TestUSD — swap 1 SUI'}
+                    </button>
+                    {swapDigest && (
+                      <a
+                        href={`https://suiscan.xyz/testnet/tx/${swapDigest}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="block text-center underline text-emerald-700 text-xs mt-3"
+                      >
+                        Last swap — view on Explorer
+                      </a>
+                    )}
+                  </div>
+                )}
                 <ProposalsPanel
                   proposals={proposals}
                   loading={proposalsLoading}
@@ -326,6 +432,7 @@ export function TransactionScreen() {
                   busyId={proposalBusyId}
                   onApprove={handleApprove}
                   onReject={handleReject}
+                  realSwapEnabled={swapReady}
                 />
                 <PaperTradingPanel
                   ledger={ledger}
