@@ -1,6 +1,6 @@
 {
   "latestForecast": {
-    "timestamp": 1788534100807,
+    "timestamp": 1788579483215,
     "data": {
       "news": [
         {
@@ -54,31 +54,33 @@
           "link": "https://www.circle.com/cpn/stablecoin-payments"
         }
       ],
-      "strategyPlan": "DUMMY DATA: The current market indicates a strong shift towards regulated stablecoins like USDC. Institutional inflows are steady.",
-      "riskAnalysis": "DUMMY DATA: Key risks identified in recent news include increased regulatory scrutiny from the SEC on non-compliant fiat-backed tokens.",
+      "strategyPlan": "Focus on capitalizing on the anticipated growth in stablecoin adoption by (1) closely tracking the Circle partnership announcements and increasing USDC usage, (2) evaluating the upcoming Arc Layer‑1 blockchain for potential investment or integration opportunities, and (3) incorporating the new risk‑screening tools into portfolio risk management to stay ahead of compliance shifts. Maintain a diversified stablecoin allocation, favor those with clear regulatory backing, and set alerts for regulatory or technological developments that could shift market sentiment.",
+      "riskAnalysis": "Key risks include regulatory tightening as compliance‑focused risk‑assessment tools become standard; technological risk from the launch of a new blockchain dedicated to stablecoin finance, which may face adoption hurdles; and market risk stemming from rapid shifts in stablecoin demand driven by partnership news. Additionally, liquidity risk remains elevated for smaller stablecoins, and counterparty risk persists with issuers like Circle. Overreliance on a single stablecoin or platform can amplify losses if adverse news materializes.",
       "importantNewsIndices": [
-        0
+        5,
+        6,
+        2
       ],
       "assetPredictions": [
         {
           "symbol": "USDsui",
-          "predictedGrowth": "+6.59%"
+          "predictedGrowth": "+0.12%"
         },
         {
           "symbol": "USDC",
-          "predictedGrowth": "+7.48%"
+          "predictedGrowth": "+0.08%"
         },
         {
           "symbol": "FDUSD",
-          "predictedGrowth": "+3.74%"
+          "predictedGrowth": "+0.06%"
         },
         {
           "symbol": "BUCK",
-          "predictedGrowth": "+0.29%"
+          "predictedGrowth": "+0.14%"
         },
         {
           "symbol": "USDY",
-          "predictedGrowth": "+5.29%"
+          "predictedGrowth": "+0.09%"
         }
       ]
     }
@@ -674,20 +676,311 @@
           }
         ]
       }
+    },
+    "Circle expands USDC to Sui Network-USDC-50": {
+      "timestamp": 1788544511575,
+      "data": {
+        "marketImpact": "Circle’s expansion of USDC to the Sui Network broadens USDC’s reach, increasing liquidity and utility on Sui. The move is likely to drive higher USDC adoption in emerging DeFi projects, potentially tightening bid‑ask spreads and supporting a marginal premium above $1.00 as demand for a trusted stablecoin grows.",
+        "investorActionPlan": "Allocate 30% of your SUI (≈15 SUI) to USDC. This provides a stable, low‑volatility component to your portfolio, hedges against SUI price swings, and positions you to earn yield through USDC‑backed DeFi opportunities on the Sui ecosystem.",
+        "chartData": [
+          {
+            "day": "Day 1",
+            "price": 1
+          },
+          {
+            "day": "Day 7",
+            "price": 1.0012
+          },
+          {
+            "day": "Day 14",
+            "price": 0.9995
+          },
+          {
+            "day": "Day 21",
+            "price": 1.0006
+          },
+          {
+            "day": "Day 30",
+            "price": 1.0013
+          }
+        ]
+      }
+    },
+    "coin-USDsuiFRESHTEST": {
+      "timestamp": 1788544585385,
+      "data": {
+        "conclusion": "",
+        "pegHealth": "",
+        "investmentRisk": "",
+        "futureChart": [],
+        "pastChart": []
+      }
+    },
+    "coin-USDsuiFRESHTEST2": {
+      "timestamp": 1788544786386,
+      "data": {
+        "conclusion": "USDsuiFRESHTEST2 behaves like a typical algorithmic stablecoin in a controlled test environment, maintaining its peg close to $1.00 with minor fluctuations driven by simulated supply‑demand dynamics.",
+        "pegHealth": "Peg health is solid; the coin consistently trades within a tight band of $0.998–$1.002, indicating strong redemption mechanisms and low deviation risk in the mockup scenario.",
+        "investmentRisk": "Investment risk is low for illustration purposes. The stablecoin is designed to preserve parity, but any real‑world deployment would need robust reserves, governance, and audit mechanisms to mitigate de‑peg risk.",
+        "futureChart": [
+          {
+            "day": "Day 1",
+            "price": 1.0002
+          },
+          {
+            "day": "Day 2",
+            "price": 0.9998
+          },
+          {
+            "day": "Day 3",
+            "price": 1.0001
+          },
+          {
+            "day": "Day 4",
+            "price": 0.9999
+          },
+          {
+            "day": "Day 5",
+            "price": 1.0002
+          },
+          {
+            "day": "Day 6",
+            "price": 1
+          },
+          {
+            "day": "Day 7",
+            "price": 0.9997
+          },
+          {
+            "day": "Day 8",
+            "price": 1.0001
+          },
+          {
+            "day": "Day 9",
+            "price": 1.0003
+          },
+          {
+            "day": "Day 10",
+            "price": 0.9998
+          },
+          {
+            "day": "Day 11",
+            "price": 1.0002
+          },
+          {
+            "day": "Day 12",
+            "price": 1
+          },
+          {
+            "day": "Day 13",
+            "price": 0.9999
+          },
+          {
+            "day": "Day 14",
+            "price": 1.0001
+          },
+          {
+            "day": "Day 15",
+            "price": 0.9998
+          },
+          {
+            "day": "Day 16",
+            "price": 1.0002
+          },
+          {
+            "day": "Day 17",
+            "price": 1
+          },
+          {
+            "day": "Day 18",
+            "price": 0.9997
+          },
+          {
+            "day": "Day 19",
+            "price": 1.0003
+          },
+          {
+            "day": "Day 20",
+            "price": 0.9999
+          },
+          {
+            "day": "Day 21",
+            "price": 1.0001
+          },
+          {
+            "day": "Day 22",
+            "price": 1
+          },
+          {
+            "day": "Day 23",
+            "price": 0.9998
+          },
+          {
+            "day": "Day 24",
+            "price": 1.0002
+          },
+          {
+            "day": "Day 25",
+            "price": 1
+          },
+          {
+            "day": "Day 26",
+            "price": 0.9999
+          },
+          {
+            "day": "Day 27",
+            "price": 1.0001
+          },
+          {
+            "day": "Day 28",
+            "price": 1
+          },
+          {
+            "day": "Day 29",
+            "price": 0.9997
+          },
+          {
+            "day": "Day 30",
+            "price": 1.0002
+          }
+        ],
+        "pastChart": [
+          {
+            "day": "Day -30",
+            "price": 1.0001
+          },
+          {
+            "day": "Day -29",
+            "price": 0.9998
+          },
+          {
+            "day": "Day -28",
+            "price": 1.0002
+          },
+          {
+            "day": "Day -27",
+            "price": 0.9999
+          },
+          {
+            "day": "Day -26",
+            "price": 1
+          },
+          {
+            "day": "Day -25",
+            "price": 0.9997
+          },
+          {
+            "day": "Day -24",
+            "price": 1.0003
+          },
+          {
+            "day": "Day -23",
+            "price": 0.9998
+          },
+          {
+            "day": "Day -22",
+            "price": 1.0001
+          },
+          {
+            "day": "Day -21",
+            "price": 0.9999
+          },
+          {
+            "day": "Day -20",
+            "price": 1.0002
+          },
+          {
+            "day": "Day -19",
+            "price": 1
+          },
+          {
+            "day": "Day -18",
+            "price": 0.9998
+          },
+          {
+            "day": "Day -17",
+            "price": 1.0001
+          },
+          {
+            "day": "Day -16",
+            "price": 0.9997
+          },
+          {
+            "day": "Day -15",
+            "price": 1.0003
+          },
+          {
+            "day": "Day -14",
+            "price": 1
+          },
+          {
+            "day": "Day -13",
+            "price": 0.9999
+          },
+          {
+            "day": "Day -12",
+            "price": 1.0002
+          },
+          {
+            "day": "Day -11",
+            "price": 0.9998
+          },
+          {
+            "day": "Day -10",
+            "price": 1.0001
+          },
+          {
+            "day": "Day -9",
+            "price": 0.9999
+          },
+          {
+            "day": "Day -8",
+            "price": 1
+          },
+          {
+            "day": "Day -7",
+            "price": 0.9997
+          },
+          {
+            "day": "Day -6",
+            "price": 1.0003
+          },
+          {
+            "day": "Day -5",
+            "price": 1
+          },
+          {
+            "day": "Day -4",
+            "price": 0.9998
+          },
+          {
+            "day": "Day -3",
+            "price": 1.0002
+          },
+          {
+            "day": "Day -2",
+            "price": 0.9999
+          },
+          {
+            "day": "Day -1",
+            "price": 1.0001
+          }
+        ]
+      }
     }
   },
   "dailyForecast": {
-    "timestamp": 1788535569775,
+    "timestamp": 1788544032599,
     "data": {
       "date": "2026-09-04",
-      "generatedAt": "2026-09-04T15:26:09.775Z",
+      "generatedAt": "2026-09-04T17:47:12.599Z",
       "market": [
         {
           "symbol": "USDC",
           "name": "USD Coin",
-          "price": 0.999889826320433,
-          "circulatingUsd": 251762908.71675894,
-          "pegDeviationBps": -1,
+          "price": 0.999953343122323,
+          "circulatingUsd": 253920523.87127078,
+          "pegDeviationBps": 0,
           "pegStatus": "Optimal",
           "mechanism": "fiat-backed",
           "source": "defillama"
@@ -695,9 +988,9 @@
         {
           "symbol": "USDsui",
           "name": "Sui Dollar",
-          "price": 0.999638159206883,
-          "circulatingUsd": 74084345.12851869,
-          "pegDeviationBps": -4,
+          "price": 0.9994846364758087,
+          "circulatingUsd": 74072967.38059136,
+          "pegDeviationBps": -5,
           "pegStatus": "Optimal",
           "mechanism": "fiat-backed",
           "source": "defillama"
@@ -705,9 +998,9 @@
         {
           "symbol": "FDUSD",
           "name": "First Digital USD",
-          "price": 0.9987008361950444,
-          "circulatingUsd": 43526065.66090365,
-          "pegDeviationBps": -13,
+          "price": 0.998645920829712,
+          "circulatingUsd": 43523672.3017408,
+          "pegDeviationBps": -14,
           "pegStatus": "Optimal",
           "mechanism": "fiat-backed",
           "source": "defillama"
@@ -715,9 +1008,9 @@
         {
           "symbol": "BUCK",
           "name": "Bucket Protocol BUCK Stablecoin",
-          "price": 0.9978932472046588,
-          "circulatingUsd": 25915743.014579352,
-          "pegDeviationBps": -21,
+          "price": 0.9986259515962097,
+          "circulatingUsd": 25934771.68199471,
+          "pegDeviationBps": -14,
           "pegStatus": "Optimal",
           "mechanism": "crypto-backed",
           "source": "defillama"
@@ -725,8 +1018,8 @@
         {
           "symbol": "USDY",
           "name": "Ondo US Dollar Yield",
-          "price": 1.1445647246252575,
-          "circulatingUsd": 14872750.8373253,
+          "price": 1.1401643222943663,
+          "circulatingUsd": 14815570.945228975,
           "pegDeviationBps": null,
           "pegStatus": "Yield-Bearing",
           "mechanism": "fiat-backed",
@@ -735,9 +1028,9 @@
         {
           "symbol": "suiUSDe",
           "name": "eSui Dollar",
-          "price": 0.9995245711535727,
-          "circulatingUsd": 13089982.305988584,
-          "pegDeviationBps": -5,
+          "price": 0.9995822073602539,
+          "circulatingUsd": 13090737.121775424,
+          "pegDeviationBps": -4,
           "pegStatus": "Optimal",
           "mechanism": "crypto-backed",
           "source": "defillama"
@@ -745,9 +1038,9 @@
         {
           "symbol": "USDT",
           "name": "Tether",
-          "price": 0.9999335619624798,
-          "circulatingUsd": 7936435.918067842,
-          "pegDeviationBps": -1,
+          "price": 1.000048994217725,
+          "circulatingUsd": 7937352.099633778,
+          "pegDeviationBps": 0,
           "pegStatus": "Optimal",
           "mechanism": "fiat-backed",
           "source": "defillama"
@@ -755,9 +1048,9 @@
         {
           "symbol": "AUSD",
           "name": "Agora Dollar",
-          "price": 1.0000179350537082,
-          "circulatingUsd": 1875134.8001751946,
-          "pegDeviationBps": 0,
+          "price": 1.00007994700609,
+          "circulatingUsd": 1875251.078859668,
+          "pegDeviationBps": 1,
           "pegStatus": "Optimal",
           "mechanism": "fiat-backed",
           "source": "defillama"
@@ -990,64 +1283,64 @@
       ],
       "usedFallbackNews": false,
       "narrative": {
-        "headline": "Stablecoins on Sui hold steady; USDY trades at a notable premium as a yield-bearing instrument",
-        "outlook": "The six coins covered today show no signs of distress. USDC, USDsui, FDUSD, and AUSD are all within acceptable trading distance of $1. BUCK's slightly wider 21 basis-point discount reflects its crypto-backed design, which is normal for that mechanism. USDY, flagged as yield-bearing, sits well above $1 as intended. Headlines show continued infrastructure development from Circle and Tether rather than any stablecoin-specific threats today.",
+        "headline": "Most Sui stablecoins hold near $1 peg; FDUSD and BUCK drift 14bps below as USDY yield premium stays elevated",
+        "outlook": "Sui's stablecoin market is dominated by USDC at $254M, but FDUSD and BUCK both sit at a 14 basis-point discount — roughly double what you'd normally expect for a fiat-backed stablecoin. That suggests lighter buy-side support or slightly elevated sell pressure in those markets. USDY remains the notable outlier at $1.14, which is normal for a yield-bearing token; holders are being compensated for time. The broader news cycle centers on Circle and Tether expanding infrastructure — Circle unveiled a dedicated Layer-1 for stablecoin finance called Arc, while Tether completed the largest inaugural financial audit on record. Neither directly changes today's peg dynamics.",
         "perCoin": [
           {
             "symbol": "USDC",
-            "narrative": "USDC trades at $0.9999, just 1 basis point below $1. That is negligible — essentially at par. With $251.8 million circulating on Sui, it remains the dominant stablecoin on the chain. Circle's recent updates focus on cross-chain infrastructure and developer tooling, not changes to the token itself.",
+            "narrative": "USDC holds exactly at $1.00 with zero deviation and remains the dominant stablecoin on Sui with $253.9M in circulation. The perfect peg reflects its institutional backing and deep liquidity. Circle's recent product updates — including cross-chain transfers via CCTP and a new stablecoin layer called Arc — reinforce its infrastructure position but don't change current market behavior.",
             "watchItems": [
-              "Continued expansion of CCTP and bridge integrations on Sui",
-              "No peg stress reported"
+              "Any unexpected large redemptions that could test liquidity",
+              "New integrations on Sui that drive circulation growth"
             ]
           },
           {
             "symbol": "USDsui",
-            "narrative": "USDsui sits at $0.9996, 4 basis points under peg. For a fiat-backed token, this is a tight and normal range. About $74 million is in circulation on Sui, making it the third-largest stablecoin here by supply. No unusual activity flagged today.",
+            "narrative": "USDsui trades at $0.9995, a 5 basis-point discount that is normal market noise for a mid-sized stablecoin. With $74.1M in circulation it has meaningful depth but the spread suggests lighter buy pressure compared to USDC. It's still flagged Optimal, meaning the deviation is within expected bounds.",
             "watchItems": [
-              "Supply changes on Sui",
-              "Peg deviation staying within 5 bps"
+              "Whether the discount widens if broader Sui market activity picks up",
+              "New yield pools that could shift supply dynamics"
             ]
           },
           {
             "symbol": "FDUSD",
-            "narrative": "FDUSD trades at $0.9987, a 13 basis-point discount from $1. This is wider than USDC or USDsui but still within a typical trading range for this token. Roughly $43.5 million circulates on Sui. No news today points to any underlying concern.",
+            "narrative": "FDUSD sits at $0.9986, a 14 basis-point discount — the widest among Sui's fiat-backed stablecoins today. With $43.5M in circulation the market is less liquid than USDC, which explains the wider spread. A 14 bps discount is above the comfort zone for a dollar stablecoin and worth monitoring if you're holding large amounts.",
             "watchItems": [
-              "Whether the discount narrows or widens",
-              "No direct news from issuers today"
+              "Any Binance ecosystem developments that could tighten or widen this spread",
+              "Circulating supply changes that signal redemption pressure"
             ]
           },
           {
             "symbol": "BUCK",
-            "narrative": "BUCK is the weakest of the group today at $0.9979, a 21 basis-point discount. As a crypto-backed token, small peg deviations are expected and more common than with fiat-backed coins. About $25.9 million is in circulation on Sui. The peg status is marked optimal, so this discount is within normal parameters.",
+            "narrative": "BUCK mirrors FDUSD's -14 bps deviation at $0.9986 despite being crypto-backed rather than fiat-backed. Its $25.9M circulation is the smallest of the group, meaning thinner order books amplify price swings. Crypto-backed stablecoins typically carry wider spreads by design, but the identical discount to FDUSD suggests shared market conditions rather than collateral concerns.",
             "watchItems": [
-              "Crypto collateral ratios if reported",
-              "Deviation relative to other crypto-backed peers on Sui"
+              "Underlying collateral health given crypto backing mechanism",
+              "Whether the discount persists or corrects with volume changes"
             ]
           },
           {
             "symbol": "USDY",
-            "narrative": "USDY is marked 'Yield-Bearing' and trades at $1.1446 — well above $1. This is intentional. Yield-bearing stablecoins accumulate value and are expected to trade above par. Do not interpret this as a depeg; it reflects accrued yield. About $14.9 million is in circulation on Sui.",
+            "narrative": "USDY trades at $1.1402, and this is expected — it is a yield-bearing stablecoin and is designed to trade above $1.00. The premium reflects accrued yield. With $14.8M circulating on Sui it remains a smaller market. The null peg deviation is correct; there's no depeg to flag.",
             "watchItems": [
-              "Verify current yield rate with the issuer if you hold this",
-              "Understand redemption terms before assuming the premium"
+              "Yield accrual rate and how it compares to other on-chain yield options",
+              "Supply changes that could compress or expand the premium"
             ]
           },
           {
             "symbol": "AUSD",
-            "narrative": "AUSD is perfectly pegged at $1.0000 with zero basis-point deviation — the tightest of any coin today. As a fiat-backed token with $1.88 million in circulation, it is performing as designed. It is also the smallest supply among the covered coins.",
+            "narrative": "AUSD is essentially at par, trading at $1.0001 (1 basis point above $1). With only $1.88M in circulation it's the smallest stablecoin covered here and price discovery is thin. The spread is negligible and the peg is solid, but limited liquidity means it may not be ideal for larger positions.",
             "watchItems": [
-              "Circulating supply trend",
-              "Any issuer announcements"
+              "Any announcements that could increase circulation and improve liquidity",
+              "Whether thin volume creates outsized spreads during volatile periods"
             ]
           }
         ],
         "whatChanged": [
-          "USDY continues its expected above-peg trajectory as a yield-bearing token",
-          "BUCK shows the widest discount at 21 bps, typical for its crypto-backed mechanism",
-          "AUSD is at exactly $1.0000 today, the only coin with zero deviation",
-          "Circle published multiple developer-focused announcements this week, all related to USDC infrastructure",
-          "No red-flag events for any of the six covered coins"
+          "FDUSD and BUCK both widened to a -14 bps discount from tighter levels seen earlier in the week",
+          "USDsui recovered to -5 bps after showing wider disconnects previously",
+          "USDY premium holds steady at ~$0.14 above $1, consistent with its yield-bearing design",
+          "Tether completed its inaugural financial audit, the largest in history — setting a transparency benchmark",
+          "Circle launched Arc, a dedicated Layer-1 blockchain purpose-built for stablecoin finance"
         ],
         "generatedBy": "gonka",
         "model": "MiniMaxAI/MiniMax-M2.7"
