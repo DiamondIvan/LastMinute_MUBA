@@ -1,41 +1,56 @@
 import { useState } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useCurrentAccount } from '@mysten/dapp-kit-react';
+import { useCurrentAccount, useDAppKit, useWallets } from '@mysten/dapp-kit-react';
 import { ConnectButton } from '@mysten/dapp-kit-react/ui';
-import {
-  enokiFlow,
-  googleClientId,
-  twitchClientId,
-  enokiRedirectUrl,
-  enokiConfigured,
-} from '../lib/enoki';
+import { twitchClientId, enokiConfigured } from '../lib/enoki';
+
+/**
+ * Enoki wallet display names, as registered by registerEnokiWallets() in
+ * lib/enoki.ts (called once at startup in main.tsx) — see
+ * node_modules/@mysten/enoki/dist/wallet/providers.mjs for the exact strings.
+ */
+const ENOKI_WALLET_NAME: Record<'google' | 'twitch', string> = {
+  google: 'Sign in with Google',
+  twitch: 'Sign in with Twitch',
+};
 
 export function LoginScreen() {
   const account = useCurrentAccount();
+  const dAppKit = useDAppKit();
+  const wallets = useWallets();
   const [email, setEmail] = useState('');
   const [socialBusy, setSocialBusy] = useState(false);
   const [socialError, setSocialError] = useState<string | null>(null);
 
   if (account) return <Navigate to="/dashboard" replace />;
 
+  /**
+   * Connects through the Enoki wallet registered by registerEnokiWallets(),
+   * the same path "Connect Wallet" already offers - not the deprecated
+   * EnokiFlow.createAuthorizationURL() this button used to call directly.
+   *
+   * That direct approach redirected to Google and got a real id_token back,
+   * but nothing ever called EnokiFlow.handleAuthCallback() to finish the
+   * login - the token was silently dropped and the app bounced back to
+   * /login. Wallet-standard's connectWallet() handles that whole exchange
+   * internally and updates useCurrentAccount() reactively on success, so the
+   * redirect above fires on its own once connected. No manual callback
+   * handling needed here at all.
+   */
   async function zkLogin(provider: 'google' | 'twitch') {
-    const clientId = provider === 'google' ? googleClientId : twitchClientId;
-    if (!enokiFlow || !clientId) {
-      setSocialError(`Enoki / ${provider} not configured (VITE_ENOKI_API_KEY etc).`);
+    const walletName = ENOKI_WALLET_NAME[provider];
+    const wallet = wallets.find((w) => w.name === walletName);
+    if (!wallet) {
+      setSocialError(`${walletName} isn't available — check Enoki configuration.`);
       return;
     }
     setSocialBusy(true);
     setSocialError(null);
     try {
-      const url = await enokiFlow.createAuthorizationURL({
-        provider,
-        clientId,
-        redirectUrl: enokiRedirectUrl,
-        network: 'testnet',
-      });
-      window.location.assign(url);
+      await dAppKit.connectWallet({ wallet });
     } catch (e) {
-      setSocialError(e instanceof Error ? e.message : 'Failed to start zkLogin');
+      setSocialError(e instanceof Error ? e.message : 'Failed to sign in');
+    } finally {
       setSocialBusy(false);
     }
   }
